@@ -6,6 +6,11 @@ from scotus import utils
 
 
 class CourtTerm(utils.TimeStampedMixin):
+    """
+    Represents a single term of the court for the purposes
+    of aggregating the Martin-Quinn score for this court
+    on this term.
+    """
     term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     martin_quinn_score = models.FloatField(null=True, blank=True)
 
@@ -14,6 +19,12 @@ class CourtTerm(utils.TimeStampedMixin):
 
 
 class MeritsCase(utils.TimeStampedMixin):
+    """
+    Represents a single merits case before the court.
+    Largely derived from SCDB data.
+    Use MeritsCase.valid_cases when doing votes because
+    combined cases might appear as duplicates.
+    """
     nyt_courtterm = models.ForeignKey(CourtTerm, null=True, blank=True)
     nyt_casename = models.CharField(max_length=255, null=True, blank=True)
     term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
@@ -82,6 +93,13 @@ class MeritsCase(utils.TimeStampedMixin):
 
 
 class Justice(utils.TimeStampedMixin):
+    """
+    Represents a single supreme court justice.
+    We have justice data from 1946 to present.
+    Much of this data is incomplete and will need
+    to be hand-edited, e.g., 'current' or the
+    various dates for nomination / confirmation.
+    """
     justice = models.CharField(max_length=255)
     justicename = models.CharField(max_length=255)
     current = models.BooleanField(default=False)
@@ -107,6 +125,11 @@ class Justice(utils.TimeStampedMixin):
 
 
 class Vote(utils.TimeStampedMixin):
+    """
+    Represents a single justice's position on a single merits
+    case. Largely derived from SCDB data, so only for cases from
+    1946-present.
+    """
     justice = models.CharField(max_length=255, db_index=True)
     justicename = models.CharField(max_length=255, db_index=True)
     caseid = models.CharField(max_length=255, db_index=True)
@@ -125,6 +148,11 @@ class Vote(utils.TimeStampedMixin):
 
 
 class JusticeTerm(utils.TimeStampedMixin):
+    """
+    Represents a single justice's record in a single term.
+    Will be nice to denormalize votes to here. Also contains
+    a Martin-Quinn score for this term.
+    """
     justice = models.CharField(max_length=255, db_index=True)
     term = models.CharField(max_length=255, db_index=True)
     martin_quinn_score = models.FloatField(null=True, blank=True)

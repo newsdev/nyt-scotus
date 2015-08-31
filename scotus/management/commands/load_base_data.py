@@ -7,6 +7,12 @@ from scotus import models
 class Command(BaseCommand):
 
     def load_scdb_data(self):
+        """
+        Loads case / justice data from SCDB's
+        justice-centered file which contains
+        a single row for every justice-vote on
+        an individual case.
+        """
         s = scdb.Load()
         s.clean()
         s.download()
@@ -41,6 +47,10 @@ class Command(BaseCommand):
         s.clean()
 
     def load_scores_data(self):
+        """
+        Loads Martin-Quinn scores for terms / justices and
+        Segal-Cover scores for justices from CSVs.
+        """
         s = scores.Load()
         s.download()
         s.load()
@@ -69,12 +79,17 @@ class Command(BaseCommand):
         s.clean()
 
     def load_scotus_data(self):
+        """
+        Loads opinions and argument audio / transcripts
+        from SupremeCourt.gov. Also gets a nicer case
+        name. Data only really available for the 2000s.
+        """
         s = scotus.Load()
-        # s.scrape_opinions()
-        # s.scrape_audio()
+        s.scrape_opinions()
+        s.scrape_audio()
         s.scrape_arguments()
-        # s.parse_opinions()
-        # s.parse_audio()
+        s.parse_opinions()
+        s.parse_audio()
         s.parse_arguments()
 
         for case in [v for k,v in s.cases.items()]:
@@ -90,7 +105,11 @@ class Command(BaseCommand):
                     m.save()
 
     def handle(self, *args, **options):
-        # self.load_scdb_data()
-        # self.load_scores_data()
+        """
+        Loads SCDB cases (critical these are first) and then
+        MQ / SC scores and finally data from SupremeCourt.gov.
+        """
+        self.load_scdb_data()
+        self.load_scores_data()
         self.load_scotus_data()
 

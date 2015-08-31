@@ -1,8 +1,13 @@
+"""
+Database credentials should be exported to the ENV.
+There are defaults here that can be overridden.
+"""
+
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-SECRET_KEY = '097au(^_!meeu3eb1j1)v5)00du#!i#i2))7&yc_&5z^-(Wq@8'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '097au(^_!meeu3eb1j1)v5)00du#!i#i2))7&yc_&5z^-(Wq@8')
 
 DEBUG = True
 

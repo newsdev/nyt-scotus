@@ -5,6 +5,9 @@ import smartypants
 
 
 class ActiveObjectsManager(models.Manager):
+    """
+    Ignores inactive objects. Handy for APIs and such.
+    """
     def get_queryset(self):
         return super(ActiveObjectsManager, self).get_queryset().filter(active=True)
 
@@ -16,6 +19,8 @@ class ValidCasesManager(models.Manager):
     2. Cases with split issues (caseissuesid ends with -02 ).
     3. All per curiams, decrees, divided votes and seriatim decisions.
     4. Inactive.
+    Per Lee Epstein and Adam Liptak. Use this manager for doing
+    any aggregations or sums of justice votes or court votes.
     """
     def get_queryset(self):
         return super(ValidCasesManager, self).get_queryset()\
@@ -26,6 +31,13 @@ class ValidCasesManager(models.Manager):
 
 
 class TimeStampedMixin(models.Model):
+    """
+    Holds a created/updated time and an active flag.
+    Also contains the active_objects manager for
+    ignoring inactive objects.
+    Contains some basic instance methods for deserializing
+    to JSON and dictionaries and the like.
+    """
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=True)
@@ -68,6 +80,10 @@ class TimeStampedMixin(models.Model):
 
 
 def webfix_unicode(possible_string):
+    """
+    This is ugly but it will create Times-approved HTML
+    out of terrible cut-and-paste from decision text.
+    """
     CHAR_MAP = [
         (u'\xa7', u'&sect;'),
         (u'\u2014', u'&mdash;'),
