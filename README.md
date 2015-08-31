@@ -1,4 +1,4 @@
-!()[https://cloud.githubusercontent.com/assets/109988/9570384/0af77540-4f58-11e5-834d-e46eaaf0bf97.png]
+![](https://cloud.githubusercontent.com/assets/109988/9570384/0af77540-4f58-11e5-834d-e46eaaf0bf97.png)
 
 ## Getting Started
 * Get the code, set up your environment and install requirements.
