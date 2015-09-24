@@ -117,12 +117,14 @@ class Justice(utils.TimeStampedMixin):
     segal_cover_qualification_score = models.FloatField(null=True, blank=True)
 
     def __unicode__(self):
+        return self.get_name()
+
+    def get_name(self):
         if self.first_name and self.last_name:
             return "%s %s" % (self.first_name, self.last_name)
         if self.full_name:
             return unicode(self.full_name)
         return unicode(self.justicename)
-
 
 class Vote(utils.TimeStampedMixin):
     """
@@ -130,6 +132,7 @@ class Vote(utils.TimeStampedMixin):
     case. Largely derived from SCDB data, so only for cases from
     1946-present.
     """
+    term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     justice = models.CharField(max_length=255, db_index=True)
     justicename = models.CharField(max_length=255, db_index=True)
     caseid = models.CharField(max_length=255, db_index=True)
@@ -144,8 +147,22 @@ class Vote(utils.TimeStampedMixin):
     voteid = models.CharField(max_length=255, null=True, blank=True)
 
     def __unicode__(self):
-        return "%s %s" % (self.justicename, self.casename)
+        return "%s in %s" % (self.justice_obj(), self.case_obj())
 
+    def justice_obj(self):
+        if Justice.objects.filter(justice=self.justice).count() == 1:
+            return Justice.objects.get(justice=self.justice)
+        return self.justice
+
+    def case_obj(self):
+        if MeritsCase.objects.filter(caseid=self.caseid).count() == 1:
+            return MeritsCase.objects.get(caseid=self.caseid)
+        return self.casename
+
+    def set_term(self):
+        if not self.term:
+            if self.case_obj():
+                self.term = self.case_obj().term
 
 class JusticeTerm(utils.TimeStampedMixin):
     """
@@ -156,10 +173,17 @@ class JusticeTerm(utils.TimeStampedMixin):
     justice = models.CharField(max_length=255, db_index=True)
     term = models.CharField(max_length=255, db_index=True)
     martin_quinn_score = models.FloatField(null=True, blank=True)
-    median_justice = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        ordering = ('-term', 'justice')
 
     def __unicode__(self):
-        return "%s %s %s" % (self.justice, self.term, self.martin_quinn_score)
+        return "%s (%s)" % (self.justice_obj(), self.term)
+
+    def justice_obj(self):
+        if Justice.objects.filter(justice=self.justice).count() == 1:
+            return Justice.objects.get(justice=self.justice)
+        return self.justice
 
     def votes(self):
         return Vote.objects.filter(

@@ -1,7 +1,9 @@
-from django.core.management.base import BaseCommand, CommandError
+import datetime
 
 from clerk import scdb, scores, scotus
 from dateutil import parser
+from django.core.management.base import BaseCommand, CommandError
+
 from scotus import models
 
 class Command(BaseCommand):
@@ -18,31 +20,25 @@ class Command(BaseCommand):
         s.download()
         s.load()
 
+        # Cases come across from nyt-clerk with date strings.
+        # Parse these to datetime objects.
+        cases = []
         for case in s.cases:
-            case_dict = dict(case.__dict__)
-            for k,v in case_dict.items():
+            for k,v in case.__dict__.items():
                 if 'date' in k:
-                    case_dict[k] = parser.parse(v)
+                    setattr(case,k,parser.parse(v))
+            cases.append(models.MeritsCase(**case.__dict__))
 
-            obj, created = models\
-                            .MeritsCase\
-                            .objects\
-                            .update_or_create(caseid=case.caseid,defaults=case_dict)
-            print obj, created
+        # Bulk creation of objects works here.
+        # Later, we'll have to do update_or_create.
+        models.MeritsCase.objects.bulk_create(cases, 500)
 
-        for justice in s.justices:
-            obj, created = models\
-                            .Justice\
-                            .objects\
-                            .update_or_create(justice=justice.justice,defaults=justice.__dict__)
-            print obj, created
+        # Creating justices 
+        justices = [models.Justice(**justice.__dict__) for justice in s.justices]
+        models.Justice.objects.bulk_create(justices, 500)
 
-        for vote in s.votes:
-            obj, created = models\
-                            .Vote\
-                            .objects\
-                            .update_or_create(caseid=vote.caseid,justice=vote.justice,defaults=vote.__dict__)
-            print obj, created
+        votes = [models.Vote(**vote.__dict__) for vote in s.votes]
+        models.Vote.objects.bulk_create(votes, 500)
 
         s.clean()
 
@@ -55,26 +51,15 @@ class Command(BaseCommand):
         s.download()
         s.load()
 
+        # Need to update the Justice objects that already exist.
         for justice in s.justices:
-            obj, created = models\
-                            .Justice\
-                            .objects\
-                            .update_or_create(justice=justice.justice,defaults=justice.__dict__)
-            print obj, created
+            models.Justice.objects.filter(justice=justice.justice).update(**justice.__dict__)
 
-        for term in s.courtterms:
-            obj, created = models\
-                            .CourtTerm\
-                            .objects\
-                            .update_or_create(term=term.term,defaults=term.__dict__)
-            print obj,created
+        courtterms = [models.CourtTerm(**courtterm.__dict__) for courtterm in s.courtterms]
+        models.CourtTerm.objects.bulk_create(courtterms, 500)
 
-        for term in s.justiceterms:
-            obj, created = models\
-                            .JusticeTerm\
-                            .objects\
-                            .update_or_create(term=term.term,justice=term.justice,defaults=term.__dict__)
-            print obj, created
+        justiceterms = [models.JusticeTerm(**justiceterm.__dict__) for justiceterm in s.justiceterms]
+        models.JusticeTerm.objects.bulk_create(justiceterms, 500)
 
         s.clean()
 
@@ -93,23 +78,27 @@ class Command(BaseCommand):
         s.parse_arguments()
 
         for case in [v for k,v in s.cases.items()]:
-            case_dict = dict(case)
-            for k,v in case_dict.items():
+            for k,v in case.items():
                 if 'date' in k:
-                    case_dict[k] = parser.parse(v)
+                    case[k] = parser.parse(v)
 
-            print "%s\t%s\t%s" % (case_dict['term'], case_dict['docket'], case_dict['argument_pdf'])
-            for m in models.MeritsCase.valid_cases.filter(docket=case_dict['docket'], term=case_dict['term']):
-                for k,v in case_dict.items():
-                    setattr(m,k,v)
-                    m.save()
+            models.MeritsCase.valid_cases\
+                .filter(docket=case['docket'], term=case['term'])\
+                .update(**case)
 
     def handle(self, *args, **options):
         """
         Loads SCDB cases (critical these are first) and then
         MQ / SC scores and finally data from SupremeCourt.gov.
         """
+        start = datetime.datetime.now()
+        print "Loading SCDB data."
         self.load_scdb_data()
+        print "Loading scores."
         self.load_scores_data()
+        print "Loading SCOTUS data."
         self.load_scotus_data()
 
+        end = datetime.datetime.now()
+
+        print "Took %s" % (end - start)
