@@ -48,6 +48,7 @@ class Command(BaseCommand):
         Segal-Cover scores for justices from CSVs.
         """
         s = scores.Load()
+        s.clean()
         s.download()
         s.load()
 

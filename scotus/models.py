@@ -25,8 +25,8 @@ class MeritsCase(utils.TimeStampedMixin):
     Use MeritsCase.valid_cases when doing votes because
     combined cases might appear as duplicates.
     """
-    nyt_courtterm = models.ForeignKey(CourtTerm, null=True, blank=True)
     nyt_casename = models.CharField(max_length=255, null=True, blank=True)
+    nyt_weighted_majvotes = models.IntegerField(blank=True, null=True)
     term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     docket = models.CharField(max_length=255, null=True, blank=True)
     caseid = models.CharField(max_length=255, null=True, blank=True)
@@ -90,6 +90,11 @@ class MeritsCase(utils.TimeStampedMixin):
         if self.nyt_casename:
             return unicode(self.nyt_casename)
         return unicode(self.casename)
+
+    def votes(self):
+        if self.scdb_majvotes and self.scdb_minvotes:
+            return "%s-%s" % (self.majvotes, self.minvotes)
+        return None
 
 
 class Justice(utils.TimeStampedMixin):
@@ -159,10 +164,12 @@ class Vote(utils.TimeStampedMixin):
             return MeritsCase.objects.get(caseid=self.caseid)
         return self.casename
 
-    def set_term(self):
-        if not self.term:
-            if self.case_obj():
-                self.term = self.case_obj().term
+    def is_majority(self):
+        if self.majority == "1":
+            return False
+        if self.majority == "2":
+            return True
+        return None
 
 class JusticeTerm(utils.TimeStampedMixin):
     """
