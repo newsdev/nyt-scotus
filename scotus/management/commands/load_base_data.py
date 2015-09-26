@@ -40,6 +40,15 @@ class Command(BaseCommand):
         votes = [models.Vote(**vote.__dict__) for vote in s.votes]
         models.Vote.objects.bulk_create(votes, 500)
 
+        naturalcourts = []
+        for naturalcourt in s.naturalcourts:
+            for k,v in naturalcourt.__dict__.items():
+                if 'date' in k:
+                    if v:
+                        setattr(naturalcourt,k,parser.parse(v))
+            naturalcourts.append(models.NaturalCourt(**naturalcourt.__dict__))
+        models.NaturalCourt.objects.bulk_create(naturalcourts, 500)
+
         s.clean()
 
     def load_scores_data(self):

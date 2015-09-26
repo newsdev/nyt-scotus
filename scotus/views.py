@@ -12,6 +12,7 @@ from django.db.models import Sum, Count
 import ftfy
 from lxml import etree
 
+from clerk import utils as clerk_utils
 from scotus import models
 from scotus import utils
 
@@ -105,7 +106,7 @@ def voting_clusters(request, last_name):
 
 def cases_by_term(request):
     """
-    /scotus/case/by/term/
+    /api/v1/case/by-term/
     Returns cases and their ideology grouped by Term.
     For a graphic by Alicia Parlapiano.
     term,share 9,share 8,share 7,share 6,share 5,share 0,share -5,share -6,share -7,share -8,share -9b,barwidth
@@ -115,7 +116,7 @@ def cases_by_term(request):
     payload = []
 
     cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1'])
-    terms = range(1946, int(utils.current_term()) + 1)
+    terms = range(1946, int(clerk_utils.current_term()) + 1)
 
     SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
 
@@ -151,7 +152,7 @@ def cases_by_term(request):
     p = models.Justice.objects.get(last_name="Powell")
 
     for term in terms:
-        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('name', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = term
         for c in court_cases:
@@ -163,14 +164,14 @@ def cases_by_term(request):
         Grab votes by kennedy and powell where they were on the winning side of a 5-4.
         """
         try:
-            court_row['powell share -5'] = float(models.JusticeCase.valid_cases.filter(justice=p, case__term=term, case__nyt_weighted_majvotes=-5, majority="2", case__decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['powell share 5'] = float(models.JusticeCase.valid_cases.filter(justice=p, case__term=term, case__nyt_weighted_majvotes=5, majority="2", case__decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share -5'] = float(models.Vote.objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share 5'] = float(models.Vote.objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
         try:
-            court_row['kennedy share -5'] = float(models.JusticeCase.valid_cases.filter(justice=k, case__term=term, case__nyt_weighted_majvotes=-5, majority="2", case__decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['kennedy share 5'] = float(models.JusticeCase.valid_cases.filter(justice=k, case__term=term, case__nyt_weighted_majvotes=5, majority="2", case__decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share -5'] = float(models.Vote.objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share 5'] = float(models.Vote.objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
@@ -189,7 +190,7 @@ def cases_by_term(request):
 
 def cases_by_court(request):
     """
-    /scotus/case/by/court/
+    /api/v1/case/by-court/
     Returns cases and their ideology grouped by NaturalCourt.
     For a graphic by Alicia Parlapiano.
     term,share 9,share 8,share 7,share 6,share 5,share 0,share -5,share -6,share -7,share -8,share -9,barwidth
@@ -201,7 +202,7 @@ def cases_by_court(request):
     cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1'])
 
     # Limit to the Vinson 1 court, 1946 to present.
-    courts = [(c.id, c.common_name, c.get_date_display()) for c in models.NaturalCourt.objects.filter(id__gte=79)]
+    courts = [(c.naturalcourt, c.common_name, c.get_date_display()) for c in models.NaturalCourt.objects.filter(naturalcourt__gte=79)]
 
     SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
 
@@ -225,8 +226,8 @@ def cases_by_court(request):
             output = output + (row[key],)
         return output
 
-    for court_id,name,dates in courts:
-        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(court__id=court_id).values('name', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+    for naturalcourt,name,dates in courts:
+        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = name
         court_row['start_date'] = dates.split(' - ')[0].strip()

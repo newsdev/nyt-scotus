@@ -3,8 +3,23 @@ from sets import Set
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
-from scotus import maps
+from clerk import maps
 from scotus import utils
+
+
+class NaturalCourt(utils.TimeStampedMixin):
+    naturalcourt = models.CharField(max_length=255, blank=True, null=True)
+    common_name = models.CharField(max_length=255, blank=True, null=True)
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+
+    def __unicode__(self):
+        return self.naturalcourt
+
+    def get_date_display(self):
+        if self.end_date:
+            return "%s - %s"  % (self.start_date, self.end_date)
+        return "%s - present" % (self.start_date)
 
 
 class CourtTerm(utils.TimeStampedMixin):
@@ -202,6 +217,8 @@ class Vote(utils.TimeStampedMixin):
     voteid = models.CharField(max_length=255, null=True, blank=True)
     majvotes = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     minvotes = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    decisiondirection = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    nyt_weighted_majvotes = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return "%s in %s" % (self.justice_obj(), self.case_obj())

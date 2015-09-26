@@ -7,6 +7,7 @@ class JusticeAdmin(admin.ModelAdmin):
     list_editable = ['last_name', 'first_name']
 
 admin.site.register(models.Justice, JusticeAdmin)
+admin.site.register(models.NaturalCourt)
 admin.site.register(models.MeritsCase)
 admin.site.register(models.Vote)
 admin.site.register(models.CourtTerm)
