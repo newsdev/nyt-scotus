@@ -62,6 +62,7 @@ def voting_clusters(request, last_name):
     justices is a comma-separated string of Justice last_names, ex, kagan,alito.
     maxvotes is a comma-separated string of majority votes, ex, 5,6 gets all 5-4 and 6-3 decisions.
     term is a year representing the term, ex, 2014.
+    /api/v1/voting/justice/Scalia/?term=2014&justices=Thomas,Roberts,Alito&maxvotes=5
     """
     j = models.Justice.objects.get(last_name=last_name)
     if request.GET.get('justices', None):
