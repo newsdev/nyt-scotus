@@ -53,8 +53,10 @@ class Command(BaseCommand):
         s.load()
 
         # Need to update the Justice objects that already exist.
+        # Also layers on last name to votes for ease of use.
         for justice in s.justices:
             models.Justice.objects.filter(justice=justice.justice).update(**justice.__dict__)
+            models.Vote.objects.filter(justice=justice.justice).update(last_name=justice.last_name)
 
         courtterms = [models.CourtTerm(**courtterm.__dict__) for courtterm in s.courtterms]
         models.CourtTerm.objects.bulk_create(courtterms, 500)

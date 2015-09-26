@@ -1,3 +1,5 @@
+from sets import Set
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -92,7 +94,7 @@ class MeritsCase(utils.TimeStampedMixin):
         return unicode(self.casename)
 
     def votes(self):
-        if self.scdb_majvotes and self.scdb_minvotes:
+        if self.majvotes and self.minvotes:
             return "%s-%s" % (self.majvotes, self.minvotes)
         return None
 
@@ -131,6 +133,52 @@ class Justice(utils.TimeStampedMixin):
             return unicode(self.full_name)
         return unicode(self.justicename)
 
+    def common_cases(self, justices, term=None, naturalcourt=None, maxvotes=None):
+        positions = Vote.active_objects.all()
+        if term:
+            positions = positions.filter(term=term)
+        if naturalcourt:
+            positions = positions.filter(naturalcourt=naturalcourt)
+        if maxvotes:
+            maxvotes = maxvotes.split(',')
+            positions = positions.filter(majvotes__in=maxvotes)
+        votes = []
+        votes.append(Set([p['caseid'] for p in positions.filter(justice=self.justice).values('caseid')]))
+        for j in justices:
+            votes.append(Set([p['caseid'] for p in positions.filter(last_name=j).values('caseid')]))
+
+        intersecting_cases = votes[0]
+        for justice_case in votes[1:]:
+            list(intersecting_cases.intersection(justice_case))
+        return intersecting_cases
+
+    def agree_positions(self, justices, cc):
+        votes = []
+        votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(justice=self.justice, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
+
+        for j in justices:
+            votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(last_name=j, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
+
+        intersecting_votes = votes[0]
+        for vote in votes[1:]:
+            intersecting_votes = intersecting_votes.intersection(vote)
+
+        return  (len(list(intersecting_votes)), intersecting_votes)
+
+    def disagree_positions(self, justices, cc):
+        votes = []
+        votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(justice=self.justice, caseid__in=cc, vote__in=['2']).values('caseid')]))
+
+        for j in justices:
+            votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(last_name=j, caseid__in=cc, vote__in=['2']).values('caseid')]))
+
+        intersecting_votes = votes[0]
+        for vote in votes[1:]:
+            intersecting_votes = intersecting_votes.intersection(vote)
+
+        return (len(list(intersecting_votes)), intersecting_votes)
+
+
 class Vote(utils.TimeStampedMixin):
     """
     Represents a single justice's position on a single merits
@@ -138,8 +186,10 @@ class Vote(utils.TimeStampedMixin):
     1946-present.
     """
     term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    naturalcourt = models.CharField(choices=maps.NATURAL_COURT_CHOICES, max_length=255, db_index=True, blank=True, null=True)
     justice = models.CharField(max_length=255, db_index=True)
     justicename = models.CharField(max_length=255, db_index=True)
+    last_name = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     caseid = models.CharField(max_length=255, db_index=True)
     docketid = models.CharField(max_length=255, db_index=True)
     casename = models.CharField(max_length=255, null=True, blank=True)
@@ -150,6 +200,8 @@ class Vote(utils.TimeStampedMixin):
     firstagreement = models.CharField(max_length=255, null=True, blank=True)
     secondagreement = models.CharField(max_length=255, null=True, blank=True)
     voteid = models.CharField(max_length=255, null=True, blank=True)
+    majvotes = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    minvotes = models.CharField(max_length=255, null=True, blank=True, db_index=True)
 
     def __unicode__(self):
         return "%s in %s" % (self.justice_obj(), self.case_obj())
