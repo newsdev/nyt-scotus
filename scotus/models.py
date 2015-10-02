@@ -39,7 +39,7 @@ class MeritsCase(utils.TimeStampedMixin):
     """
     Represents a single merits case before the court.
     Largely derived from SCDB data.
-    Use MeritsCase.valid_cases when doing votes because
+    Use MeritsCase.valid_objects when doing votes because
     combined cases might appear as duplicates.
     """
     nyt_casename = models.CharField(max_length=255, null=True, blank=True)
@@ -101,7 +101,8 @@ class MeritsCase(utils.TimeStampedMixin):
     opinion_pdf_url = models.CharField(max_length=255, blank=True, null=True)
     argument_pdf = ArrayField(models.CharField(max_length=255, blank=True, null=True), default=[])
     audio_mp3 = ArrayField(models.CharField(max_length=255, blank=True, null=True), default=[])
-    valid_cases = utils.ValidCasesManager()
+
+    valid_objects = utils.ValidCasesManager()
 
     def __unicode__(self):
         if self.nyt_casename:
@@ -228,6 +229,11 @@ class Vote(utils.TimeStampedMixin):
     minvotes = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     decisiondirection = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     nyt_weighted_majvotes = models.IntegerField(blank=True, null=True)
+    caseissuesid = models.CharField(max_length=255, null=True, blank=True)
+    decisiontype = models.CharField(max_length=255, null=True, blank=True)
+    datedecision = models.DateField(blank=True, null=True)
+
+    valid_objects = utils.ValidCasesManager()
 
     def __unicode__(self):
         return "%s in %s" % (self.justice_obj(), self.case_obj())
@@ -273,4 +279,4 @@ class JusticeTerm(utils.TimeStampedMixin):
     def votes(self):
         return Vote.objects.filter(
                         justice=self.justice,
-                        caseid__in=[c['caseid'] for c in Case.valid_cases.filter(term=self.term).values('caseid')])
+                        caseid__in=[c['caseid'] for c in Case.valid_objects.filter(term=self.term).values('caseid')])

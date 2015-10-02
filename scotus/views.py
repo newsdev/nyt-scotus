@@ -35,7 +35,7 @@ def filter_and_sum_api(request):
         values = params['values'][-1].split(',')
         del params['values']
 
-    query = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1'])
+    query = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
     for k,v in params.items():
         kw = {}
         if "__in" in k:
@@ -115,7 +115,7 @@ def cases_by_term(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
     terms = range(1946, int(clerk_utils.current_term()) + 1)
 
     SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
@@ -152,7 +152,7 @@ def cases_by_term(request):
     p = models.Justice.objects.get(last_name="Powell")
 
     for term in terms:
-        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = term
         for c in court_cases:
@@ -164,14 +164,14 @@ def cases_by_term(request):
         Grab votes by kennedy and powell where they were on the winning side of a 5-4.
         """
         try:
-            court_row['powell share -5'] = float(models.Vote.objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['powell share 5'] = float(models.Vote.objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share -5'] = float(models.Vote.valid_objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share 5'] = float(models.Vote.valid_objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
         try:
-            court_row['kennedy share -5'] = float(models.Vote.objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['kennedy share 5'] = float(models.Vote.objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share -5'] = float(models.Vote.valid_objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share 5'] = float(models.Vote.valid_objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
@@ -201,7 +201,7 @@ def cases_by_court(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
 
     # Limit to the Vinson 1 court, 1946 to present.
     courts = [(c.naturalcourt, c.common_name, c.get_date_display()) for c in models.NaturalCourt.objects.filter(naturalcourt__gte=79)]
@@ -229,7 +229,7 @@ def cases_by_court(request):
         return output
 
     for naturalcourt,name,dates in courts:
-        court_cases = models.MeritsCase.valid_cases.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = name
         court_row['start_date'] = dates.split(' - ')[0].strip()

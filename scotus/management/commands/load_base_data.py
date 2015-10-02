@@ -37,7 +37,12 @@ class Command(BaseCommand):
         justices = [models.Justice(**justice.__dict__) for justice in s.justices]
         models.Justice.objects.bulk_create(justices, 500)
 
-        votes = [models.Vote(**vote.__dict__) for vote in s.votes]
+        votes = []
+        for vote in s.votes:
+            for k,v in vote.__dict__.items():
+                if 'date' in k:
+                    setattr(vote,k,parser.parse(v))
+            votes.append(models.Vote(**vote.__dict__))
         models.Vote.objects.bulk_create(votes, 500)
 
         naturalcourts = []
