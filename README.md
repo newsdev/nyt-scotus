@@ -24,6 +24,7 @@ django-admin load_base_data
 ```
 
 ## The Admin
+![](http://bukk.it/noidea-professor.jpg)
 
 ## The API
 This assumes you're running `django-admin runserver` on `127.0.0.1:8000` which is the default setting.
