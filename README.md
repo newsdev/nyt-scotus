@@ -40,8 +40,243 @@ Voting clusters returns counts and lists of cases where the Justices specified i
 * A list of vote distributions to consider, expressed by the maximum vote count, e.g., `max_votes=5,6` would limit the query to just 5-4 and 6-3 decisions.
 
 #### Output
-```json
-{"disagree_cases": [{"term": "2014", "casename": "ALA. DEMOCRATIC CONF. v. ALABAMA", "spit": "5-4"}, {"term": "2014", "casename": "UNITED STATES v. KWAI FUN WONG", "spit": "5-4"}, {"term": "2014", "casename": "ALA. LEGISLATIVE BLACK CAUCUS v. ALABAMA", "spit": "5-4"}, {"term": "2014", "casename": "TEXAS DEPARTMENT OF HOUSING AND COMMUNITY AFFAIRS v. INCLUSIVE COMMUNITIES PROJECT, INC.", "spit": "5-4"}, {"term": "2014", "casename": "KINGSLEY v. HENDRICKSON", "spit": "5-4"}, {"term": "2014", "casename": "CITY OF LOS ANGELES, CALIFORNIA v. PATEL", "spit": "5-4"}, {"term": "2014", "casename": "ARIZONA STATE LEGISLATURE v. ARIZONA INDEPENDENT REDISTRICTING COMMISSION", "spit": "5-4"}, {"term": "2014", "casename": "BRUMFIELD v. CAIN", "spit": "5-4"}, {"term": "2014", "casename": "OBERGEFELL v. HODGES", "spit": "5-4"}], "justice": "Antonin Scalia", "agree_cases": [{"term": "2014", "casename": "DEP'T OF HOMELAND SEC. v. MACLEAN", "spit": "7-2"}, {"term": "2014", "casename": "KERRY v. DIN", "spit": "5-4"}, {"term": "2014", "casename": "COLEMAN v. TOLLEFSON", "spit": "9-0"}, {"term": "2014", "casename": "BAKER BOTTS, L.L.P., v. ASARCO, L.L.C.", "spit": "6-3"}, {"term": "2014", "casename": "HENDERSON v. UNITED STATES", "spit": "9-0"}, {"term": "2014", "casename": "TIBBLE v. EDISON INTERNATIONAL", "spit": "9-0"}, {"term": "2014", "casename": "HARRIS v. VIEGELAHN", "spit": "9-0"}, {"term": "2014", "casename": "BULLARD v. BLUE HILLS BANK", "spit": "9-0"}, {"term": "2014", "casename": "OHIO v. CLARK", "spit": "9-0"}, {"term": "2014", "casename": "BANK OF AMERICA, N.A. v. CAULKETT", "spit": "9-0"}, {"term": "2014", "casename": "MICHIGAN v. ENVIRONMENTAL PROTECTION AGENCY", "spit": "5-4"}, {"term": "2014", "casename": "OMNICARE, INC. v. LABORERS DIST. COUNCIL CONSTR. INDUS. PENSION FUND", "spit": "9-0"}, {"term": "2014", "casename": "WARGER v. SHAUERS", "spit": "9-0"}, {"term": "2014", "casename": "PEREZ v. MORTGAGE BANKERS ASS'N", "spit": "9-0"}, {"term": "2014", "casename": "INTEGRITY STAFFING SOLUTIONS, INC. v. BUSK", "spit": "9-0"}, {"term": "2014", "casename": "HOLT v. HOBBS", "spit": "9-0"}, {"term": "2014", "casename": "WHITFIELD v. UNITED STATES", "spit": "9-0"}, {"term": "2014", "casename": "HEIEN v. NORTH CAROLINA", "spit": "8-1"}, {"term": "2014", "casename": "HANA FINANCIAL, INC. v. HANA BANK", "spit": "9-0"}, {"term": "2014", "casename": "DIRECT MKTG. ASS'N v. BROHL", "spit": "9-0"}, {"term": "2014", "casename": "MCFADDEN v. UNITED STATES", "spit": "9-0"}, {"term": "2014", "casename": "M&G POLYMERS USA, LLC v. TACKETT", "spit": "9-0"}, {"term": "2014", "casename": "DAVIS v. AYALA", "spit": "5-4"}, {"term": "2014", "casename": "MACH MINING, LLC, v. EQUAL EMPLOYMENT OPPORTUNITY COMMISSION", "spit": "9-0"}, {"term": "2014", "casename": "TAYLOR v. BARKES", "spit": "9-0"}, {"term": "2014", "casename": "GRADY v. NORTH CAROLINA", "spit": "9-0"}, {"term": "2014", "casename": "CITY AND COUNTY OF SAN FRANCISCO, CALIFORNIA v. SHEEHAN", "spit": "8-0"}, {"term": "2014", "casename": "JESINOSKI v. COUNTRYWIDE HOME LOANS, INC.", "spit": "9-0"}, {"term": "2014", "casename": "GLOSSIP v. GROSS", "spit": "5-4"}, {"term": "2014", "casename": "GELBOIM v. BANK OF AM. CORP.", "spit": "9-0"}, {"term": "2014", "casename": "DOT v. ASS'N OF AM. R.R.", "spit": "9-0"}, {"term": "2014", "casename": "REED v. TOWN OF GILBERT", "spit": "9-0"}, {"term": "2014", "casename": "KELLOGG BROWN & ROOT SERVICES, INC. v. UNITED STATES EX REL. CARTER", "spit": "9-0"}, {"term": "2014", "casename": "WOODS v. DONALD", "spit": "9-0"}, {"term": "2014", "casename": "ARMSTRONG v. EXCEPTIONAL CHILD CENTER, INC.", "spit": "5-4"}, {"term": "2014", "casename": "HORNE v. DEPARTMENT OF AGRICULTURE", "spit": "8-1"}], "pct": 0.6338028169014085, "common_cases_number": 71, "disagree_number": 9, "agree_number": 36}
+```javascript
+{
+  "disagree_cases": [
+    {
+      "term": "2014",
+      "casename": "ALA. DEMOCRATIC CONF. v. ALABAMA",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "UNITED STATES v. KWAI FUN WONG",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "ALA. LEGISLATIVE BLACK CAUCUS v. ALABAMA",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "TEXAS DEPARTMENT OF HOUSING AND COMMUNITY AFFAIRS v. INCLUSIVE COMMUNITIES PROJECT, INC.",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "KINGSLEY v. HENDRICKSON",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "CITY OF LOS ANGELES, CALIFORNIA v. PATEL",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "ARIZONA STATE LEGISLATURE v. ARIZONA INDEPENDENT REDISTRICTING COMMISSION",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "BRUMFIELD v. CAIN",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "OBERGEFELL v. HODGES",
+      "spit": "5-4"
+    }
+  ],
+  "justice": "Antonin Scalia",
+  "agree_cases": [
+    {
+      "term": "2014",
+      "casename": "DEP'T OF HOMELAND SEC. v. MACLEAN",
+      "spit": "7-2"
+    },
+    {
+      "term": "2014",
+      "casename": "KERRY v. DIN",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "COLEMAN v. TOLLEFSON",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "BAKER BOTTS, L.L.P., v. ASARCO, L.L.C.",
+      "spit": "6-3"
+    },
+    {
+      "term": "2014",
+      "casename": "HENDERSON v. UNITED STATES",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "TIBBLE v. EDISON INTERNATIONAL",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "HARRIS v. VIEGELAHN",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "BULLARD v. BLUE HILLS BANK",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "OHIO v. CLARK",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "BANK OF AMERICA, N.A. v. CAULKETT",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "MICHIGAN v. ENVIRONMENTAL PROTECTION AGENCY",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "OMNICARE, INC. v. LABORERS DIST. COUNCIL CONSTR. INDUS. PENSION FUND",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "WARGER v. SHAUERS",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "PEREZ v. MORTGAGE BANKERS ASS'N",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "INTEGRITY STAFFING SOLUTIONS, INC. v. BUSK",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "HOLT v. HOBBS",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "WHITFIELD v. UNITED STATES",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "HEIEN v. NORTH CAROLINA",
+      "spit": "8-1"
+    },
+    {
+      "term": "2014",
+      "casename": "HANA FINANCIAL, INC. v. HANA BANK",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "DIRECT MKTG. ASS'N v. BROHL",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "MCFADDEN v. UNITED STATES",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "M&G POLYMERS USA, LLC v. TACKETT",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "DAVIS v. AYALA",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "MACH MINING, LLC, v. EQUAL EMPLOYMENT OPPORTUNITY COMMISSION",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "TAYLOR v. BARKES",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "GRADY v. NORTH CAROLINA",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "CITY AND COUNTY OF SAN FRANCISCO, CALIFORNIA v. SHEEHAN",
+      "spit": "8-0"
+    },
+    {
+      "term": "2014",
+      "casename": "JESINOSKI v. COUNTRYWIDE HOME LOANS, INC.",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "GLOSSIP v. GROSS",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "GELBOIM v. BANK OF AM. CORP.",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "DOT v. ASS'N OF AM. R.R.",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "REED v. TOWN OF GILBERT",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "KELLOGG BROWN & ROOT SERVICES, INC. v. UNITED STATES EX REL. CARTER",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "WOODS v. DONALD",
+      "spit": "9-0"
+    },
+    {
+      "term": "2014",
+      "casename": "ARMSTRONG v. EXCEPTIONAL CHILD CENTER, INC.",
+      "spit": "5-4"
+    },
+    {
+      "term": "2014",
+      "casename": "HORNE v. DEPARTMENT OF AGRICULTURE",
+      "spit": "8-1"
+    }
+  ],
+  "pct": 0.63380281690141,
+  "common_cases_number": 71,
+  "disagree_number": 9,
+  "agree_number": 36
+}
 ```
 
 ### [Cases by Term](http://127.0.0.1:8000/scotus/api/v1/case/by-term/)
