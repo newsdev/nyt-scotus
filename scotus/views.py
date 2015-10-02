@@ -63,7 +63,7 @@ def voting_clusters(request, last_name):
     justices is a comma-separated string of Justice last_names, ex, kagan,alito.
     maxvotes is a comma-separated string of majority votes, ex, 5,6 gets all 5-4 and 6-3 decisions.
     term is a year representing the term, ex, 2014.
-    /api/v1/voting/justice/Scalia/?term=2014&justices=Thomas,Roberts,Alito&maxvotes=5
+    /api/v1/voting/justice/Scalia/?term=2014&justices=Thomas,Roberts,Alito&maxvotes=5,6
     """
     j = models.Justice.objects.get(last_name=last_name)
     if request.GET.get('justices', None):
@@ -179,6 +179,8 @@ def cases_by_term(request):
 
     payload = sorted(payload, key=lambda x:(x['term']))
 
+    # return HttpResponse(json.dumps(payload))
+
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response)
     header = ("term", "share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9", "kennedy share -5", "kennedy share 5", "powell share -5", "powell share 5")
@@ -238,6 +240,8 @@ def cases_by_court(request):
         payload.append(court_row)
 
     payload = sorted(payload, key=lambda x:(x['start_date']))
+
+    # return HttpResponse(json.dumps(payload))
 
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response)

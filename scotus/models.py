@@ -8,7 +8,7 @@ from scotus import utils
 
 
 class NaturalCourt(utils.TimeStampedMixin):
-    naturalcourt = models.CharField(max_length=255, blank=True, null=True)
+    naturalcourt = models.IntegerField(blank=True, null=True)
     common_name = models.CharField(max_length=255, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -149,6 +149,9 @@ class Justice(utils.TimeStampedMixin):
         return unicode(self.justicename)
 
     def common_cases(self, justices, term=None, naturalcourt=None, maxvotes=None):
+        """
+        Cases this Justice and all Justices in the list `justices` have in common.
+        """
         positions = Vote.active_objects.all()
         if term:
             positions = positions.filter(term=term)
@@ -168,6 +171,9 @@ class Justice(utils.TimeStampedMixin):
         return intersecting_cases
 
     def agree_positions(self, justices, cc):
+        """
+        Votes where this Justice and all Justices in the list `justices` were in the majority.
+        """
         votes = []
         votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(justice=self.justice, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
 
@@ -181,6 +187,9 @@ class Justice(utils.TimeStampedMixin):
         return  (len(list(intersecting_votes)), intersecting_votes)
 
     def disagree_positions(self, justices, cc):
+        """
+        Votes where this Justice and all Justices in the list `justices` were in the minority.
+        """
         votes = []
         votes.append(Set([p['caseid'] for p in Vote.active_objects.filter(justice=self.justice, caseid__in=cc, vote__in=['2']).values('caseid')]))
 
