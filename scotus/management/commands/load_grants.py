@@ -11,7 +11,7 @@ from scotus import models
 class Command(BaseCommand):
 
     def load_grants(self):
-        s = grants.Load(terms=[int(clerk_utils.current_term())])
+        s = grants.Load()
         s.scrape()
 
         for case in s.cases:
@@ -23,8 +23,30 @@ class Command(BaseCommand):
                             setattr(case,k,parser.parse(v))
                         except ValueError:
                             print v
-            obj, created = models.MeritsCase.objects.update_or_create(docket=case.docket,term=case.term,defaults=case.__dict__)
-            print created, obj
+
+            try:
+                c = models.MeritsCase.objects.get(docket=case.docket,term=case.term)
+                for k,v in case.__dict__.items():
+                    if not getattr(c,k, None):
+                        setattr(c,k,v)
+                c.save()
+                print "^ %s" % c.casename
+            except models.MeritsCase.DoesNotExist:
+                c = models.MeritsCase(**case.__dict__)
+                c.save()
+                print "+ %s" % c.casename
+
+            except models.MeritsCase.MultipleObjectsReturned:
+                c = models.MeritsCase.objects.filter(docket=case.docket,term=case.term,casename=case.casename)
+                if c.count() == 1:
+                    c = c[0]
+                    for k,v in case.__dict__.items():
+                        if not getattr(c,k, None):
+                            setattr(c,k,v)
+                    c.save()
+                    print "^ %s" % c.casename
+                else:
+                    print "Duplicate cases: " + ", ".join([z.id for z in c])
 
     def handle(self, *args, **kwargs):
         self.load_grants()

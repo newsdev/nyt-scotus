@@ -104,8 +104,13 @@ class MeritsCase(utils.TimeStampedMixin):
     opinion_pdf_url = models.CharField(max_length=255, blank=True, null=True)
     argument_pdf = ArrayField(models.CharField(max_length=255, blank=True, null=True), default=[])
     audio_mp3 = ArrayField(models.CharField(max_length=255, blank=True, null=True), default=[])
+    question = models.TextField(blank=True, null=True)
 
+    objects = models.Manager()
     valid_objects = utils.ValidCasesManager()
+
+    class Meta:
+        ordering = ['-term', 'casename']
 
     def __unicode__(self):
         if self.nyt_casename:
