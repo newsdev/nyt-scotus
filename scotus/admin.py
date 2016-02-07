@@ -7,7 +7,7 @@ class MeritsCaseAdmin(admin.ModelAdmin):
     search_fields = ['casename', 'nyt_casename', 'docket']
 
 class JusticeAdmin(admin.ModelAdmin):
-    list_display = ['__unicode__', 'last_name', 'first_name']
+    list_display = ['__unicode__', 'last_name', 'first_name', 'justice']
 
 admin.site.register(models.Justice, JusticeAdmin)
 admin.site.register(models.NaturalCourt)
