@@ -1,3 +1,5 @@
+import json
+
 from django.core import serializers
 from django.db import models
 import ftfy

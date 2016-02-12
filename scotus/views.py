@@ -16,7 +16,15 @@ from clerk import utils as clerk_utils
 from scotus import models
 from scotus import utils
 
+def scores_by_term(request):
+    params = dict(request.GET)
+    payload = sorted([j.justice_dict() for j in models.JusticeTerm.objects.all()], key=lambda x: (x['justice'], x['term']))
+    return HttpResponse(json.dumps(payload))
+
 def filter_and_sum_api(request):
+    """
+
+    """
     params = dict(request.GET)
 
     grouper = 'term'

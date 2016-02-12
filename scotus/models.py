@@ -34,6 +34,9 @@ class CourtTerm(utils.TimeStampedMixin):
     def __unicode__(self):
         return "%s %s" % (self.term, self.martin_quinn_score)
 
+    def justice_terms(self):
+        return JusticeTerm.objects.filter(term=self.term)
+
 
 class MeritsCase(utils.TimeStampedMixin):
     """
@@ -263,6 +266,7 @@ class Vote(utils.TimeStampedMixin):
             return True
         return None
 
+
 class JusticeTerm(utils.TimeStampedMixin):
     """
     Represents a single justice's record in a single term.
@@ -282,7 +286,16 @@ class JusticeTerm(utils.TimeStampedMixin):
     def justice_obj(self):
         if Justice.objects.filter(justice=self.justice).count() == 1:
             return Justice.objects.get(justice=self.justice)
-        return self.justice
+        return None
+
+    def justice_dict(self):
+        payload = self.dict()
+        payload['justice'] = int(self.justice)
+        payload['term'] = int(self.term)
+        j = self.justice_obj()
+        if j:
+            payload['justice_data'] = j.dict()
+        return payload
 
     def votes(self):
         return Vote.objects.filter(
