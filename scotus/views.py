@@ -16,8 +16,21 @@ from clerk import utils as clerk_utils
 from scotus import models
 from scotus import utils
 
-def scores_by_term(request):
+def liberal_decisions_by_justice(request, term):
     params = dict(request.GET)
+    justice_terms = models.JusticeTerm.objects.filter(term=term)
+    payload = [{"justice_term": v.dict(), "liberalness": v.liberal_pct(), "justice": models.Justice.objects.get(justice=v.justice).dict()} for v in justice_terms]
+    return HttpResponse(json.dumps(payload))
+
+def scores_by_natural_court(request):
+    payload = [{"naturalcourt": n.dict(), "terms": n.court_terms()} for n in models.NaturalCourt.objects.all()]
+    return HttpResponse(json.dumps(payload))
+
+def court_scores_by_term(request):
+    payload = sorted([c.dict() for c in models.CourtTerm.objects.all()], key=lambda x: x['term'])
+    return HttpResponse(json.dumps(payload))
+
+def justice_scores_by_term(request):
     payload = sorted([j.justice_dict() for j in models.JusticeTerm.objects.all()], key=lambda x: (x['justice'], x['term']))
     return HttpResponse(json.dumps(payload))
 

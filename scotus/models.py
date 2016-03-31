@@ -14,12 +14,15 @@ class NaturalCourt(utils.TimeStampedMixin):
     end_date = models.DateField(blank=True, null=True)
 
     def __unicode__(self):
-        return self.naturalcourt
+        return "%s" % self.common_name
 
     def get_date_display(self):
         if self.end_date:
             return "%s - %s"  % (self.start_date, self.end_date)
         return "%s - present" % (self.start_date)
+
+    def court_terms(self):
+        return [{"term": f.term, "score": f.martin_quinn_score} for f in CourtTerm.objects.filter(naturalcourt=self)]
 
 
 class CourtTerm(utils.TimeStampedMixin):
@@ -29,6 +32,7 @@ class CourtTerm(utils.TimeStampedMixin):
     on this term.
     """
     term = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    naturalcourt = models.ForeignKey(NaturalCourt, null=True, blank=True)
     martin_quinn_score = models.FloatField(null=True, blank=True)
 
     def __unicode__(self):
@@ -283,6 +287,9 @@ class JusticeTerm(utils.TimeStampedMixin):
     def __unicode__(self):
         return "%s (%s)" % (self.justice_obj(), self.term)
 
+    def liberal_pct(self):
+        return {"liberal": len(self.liberal_votes()), "total": len(self.votes()), "pct": len(self.liberal_votes()) / float(len(self.votes()))}
+
     def justice_obj(self):
         if Justice.objects.filter(justice=self.justice).count() == 1:
             return Justice.objects.get(justice=self.justice)
@@ -297,7 +304,8 @@ class JusticeTerm(utils.TimeStampedMixin):
             payload['justice_data'] = j.dict()
         return payload
 
+    def liberal_votes(self):
+        return Vote.valid_objects.filter(justice=self.justice, term=self.term, direction="2")
+
     def votes(self):
-        return Vote.objects.filter(
-                        justice=self.justice,
-                        caseid__in=[c['caseid'] for c in Case.valid_objects.filter(term=self.term).values('caseid')])
+        return Vote.valid_objects.filter(justice=self.justice, term=self.term)
