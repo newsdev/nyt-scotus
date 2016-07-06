@@ -1,26 +1,22 @@
+# nyt-scotus
+
 ![](https://cloud.githubusercontent.com/assets/109988/9570384/0af77540-4f58-11e5-834d-e46eaaf0bf97.png)
 
+## Getting started
+Please use the [nyt-scotus-loader](https://github.com/newsdev/nyt-scotus-loader) and [nyt-scdb-loader](https://github.com/newsdev/nyt-scdb-loader) to get previous and current term data loaded.
+
+This project is meant to specify an admin and a read API.
+
 ## Bootstrapping
-our environment and install requirements.
+Our environment and install requirements.
 ```
 mkvirtualenv nyt-scotus
 git clone git@github.com:newsdev/nyt-scotus.git && cd nyt-scotus
 pip install -r requirements.txt
 add2virtualenv .
+add2virtualenv scotus
+add2virtualenv config
 export DJANGO_SETTINGS_MODULE=config.dev.settings
-```
-
-* Before you can load data, you need to have a Postgres database called `nyt_scotus_dev` and a user `nyt_scotus_dev` that can insert/update/delete but also create indexes. Since it's local development, we recommend making this user a superuser.
-```
-createdb nyt_scotus_dev
-createuser nyt_scotus_dev
-psql nyt_scotus_dev
-alter user nyt_scotus_dev with superuser;
-```
-
-* Now you can load data.
-```
-django-admin load_base_data
 ```
 
 ## The Admin
