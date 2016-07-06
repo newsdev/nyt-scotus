@@ -23,13 +23,13 @@ export DJANGO_SETTINGS_MODULE=config.dev.settings
 ## The API
 This assumes you're running `django-admin runserver` on `127.0.0.1:8000` which is the default setting.
 
-### [Voting clusters](http://127.0.0.1:8000/scotus/api/v1/voting/justice/Scalia/?term=2014&justices=Alito,Thomas,Roberts&max_votes=5,6)
+### [Voting clusters](http://127.0.0.1:8000/scotus/api/v1/voting/justice/AScalia/?term=2014&justices=SAAlito,CThomas,JGRoberts&max_votes=5,6)
 Voting clusters returns counts and lists of cases where the Justices specified in the API call voted on the same side, either `agree_cases` where the Justices voted together in the majority or `disagree_cases` where they voted together in the minority.
 
 #### Requires
 * A time parameter; either `term` or `naturalcourt`.
-* A Justice name, e.g., `Scalia` in the URL path.
-* A list of Justice names, e.g., `justices=Kennedy,Thomas,Alito` for finding common cases.
+* A Justice name, e.g., `AScalia` in the URL path.
+* A list of Justice names, e.g., `justices=AMKennedy,CThomas,SAAlito` for finding common cases.
 
 #### Optional
 * A list of vote distributions to consider, expressed by the maximum vote count, e.g., `max_votes=5,6` would limit the query to just 5-4 and 6-3 decisions.
