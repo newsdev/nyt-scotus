@@ -6,14 +6,6 @@ import ftfy
 import smartypants
 
 
-class ActiveObjectsManager(models.Manager):
-    """
-    Ignores inactive objects. Handy for APIs and such.
-    """
-    def get_queryset(self):
-        return super(ActiveObjectsManager, self).get_queryset().filter(active=True)
-
-
 class ValidCasesManager(models.Manager):
     """
     Removes:
@@ -29,22 +21,9 @@ class ValidCasesManager(models.Manager):
             .filter(decisiontype__in=["1", "7"])\
             .filter(docketid__endswith="-01")\
             .filter(caseissuesid__endswith="-01")\
-            .filter(active=True)
 
 
-class TimeStampedMixin(models.Model):
-    """
-    Holds a created/updated time and an active flag.
-    Also contains the active_objects manager for
-    ignoring inactive objects.
-    Contains some basic instance methods for deserializing
-    to JSON and dictionaries and the like.
-    """
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-    active = models.BooleanField(default=True)
-    objects = models.Manager()
-    active_objects = ActiveObjectsManager()
+class BaseScotusModel(models.Model):
 
     class Meta:
         abstract = True
@@ -64,7 +43,9 @@ class TimeStampedMixin(models.Model):
         return payload
 
     def dict(self):
-        payload = dict(json.loads(serializers.serialize('json', [self]))[0]['fields'])
+        serialized = serializers.serialize('json', [self])
+        payload = dict(json.loads(serialized)[0]['fields'])
+        payload[u'pk'] = json.loads(serialized)[0]['pk']
         for key,value in payload.items():
             if value:
                 try:

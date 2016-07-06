@@ -27,7 +27,8 @@ def scores_by_natural_court(request):
     return HttpResponse(json.dumps(payload))
 
 def court_scores_by_term(request):
-    payload = sorted([c.dict() for c in models.CourtTerm.objects.all()], key=lambda x: x['term'])
+    print [c.dict().keys() for c in models.CourtTerm.objects.all()]
+    payload = sorted([c.dict() for c in models.CourtTerm.objects.all()], key=lambda x: x['pk'])
     return HttpResponse(json.dumps(payload))
 
 def justice_scores_by_term(request):
@@ -36,27 +37,27 @@ def justice_scores_by_term(request):
 
 def filter_and_sum_api(request):
     """
-
+    A handy API for getting counts of cases that match a certain set of filters.
     """
     params = dict(request.GET)
 
     grouper = 'term'
     order_by = '-term'
-    values = ['id', 'name', 'majvotes', 'nyt_weighted_majvotes', 'term']
+    values = ['caseid', 'casename', 'majvotes', 'term']
 
     if params.get('grouper', None):
         grouper = params['grouper'][-1]
         del params['grouper']
 
     if params.get('order_by', None):
-        order_by = params['order_by'][-1]
+        order_by = params['order_by'][-1].split(',')
         del params['order_by']
 
     if params.get('values', None):
         values = params['values'][-1].split(',')
         del params['values']
 
-    query = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
+    query = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
     for k,v in params.items():
         kw = {}
         if "__in" in k:
@@ -64,7 +65,7 @@ def filter_and_sum_api(request):
         else:
             kw[k] = v[-1]
         query = query.filter(**kw)
-    query = query.order_by(order_by)
+    query = query.order_by(*order_by)
     query = query.values(*values)
 
     payload = {}
@@ -78,15 +79,15 @@ def filter_and_sum_api(request):
 
     return HttpResponse(json.dumps(payload))
 
-def voting_clusters(request, last_name):
+def voting_clusters(request, justicename):
     """
     naturalcourt is an SCDB natural court ID of a natural court, ex 1704 for Roberts 5.
-    justices is a comma-separated string of Justice last_names, ex, kagan,alito.
+    justices is a comma-separated string of Justice justicenames, ex, kagan,alito.
     maxvotes is a comma-separated string of majority votes, ex, 5,6 gets all 5-4 and 6-3 decisions.
     term is a year representing the term, ex, 2014.
     /api/v1/voting/justice/Scalia/?term=2014&justices=Thomas,Roberts,Alito&maxvotes=5,6
     """
-    j = models.Justice.objects.get(last_name=last_name)
+    j = models.Justice.objects.get(justicename=justicename)
     if request.GET.get('justices', None):
         justices = request.GET.get('justices', None).split(',')
         maxvotes = request.GET.get('maxvotes', None)
@@ -136,7 +137,7 @@ def cases_by_term(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
     terms = range(1946, int(clerk_utils.current_term()) + 1)
 
     SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
@@ -169,38 +170,36 @@ def cases_by_term(request):
         output = output + (row["kennedy share -5"], row["kennedy share 5"], row["powell share -5"], row["powell share 5"])
         return output
 
-    k = models.Justice.objects.get(last_name="Kennedy")
-    p = models.Justice.objects.get(last_name="Powell")
+    k = models.Justice.objects.get(justicename="AMKennedy")
+    p = models.Justice.objects.get(justicename="LFPowell")
 
     for term in terms:
-        court_cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = term
         for c in court_cases:
-            if c['nyt_weighted_majvotes']:
-                court_row['share %s' % c['nyt_weighted_majvotes']] += 1
+            if c['weighted_majvotes']:
+                court_row['share %s' % c['weighted_majvotes']] += 1
         court_row = compute_shares(court_row, court_cases.count())
 
         """
         Grab votes by kennedy and powell where they were on the winning side of a 5-4.
         """
         try:
-            court_row['powell share -5'] = float(models.Vote.valid_objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['powell share 5'] = float(models.Vote.valid_objects.filter(justice=p.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share -5'] = float(models.Vote.valid.filter(justice=p.justice, term=term, weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['powell share 5'] = float(models.Vote.valid.filter(justice=p.justice, term=term, weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
         try:
-            court_row['kennedy share -5'] = float(models.Vote.valid_objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
-            court_row['kennedy share 5'] = float(models.Vote.valid_objects.filter(justice=k.justice, term=term, nyt_weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share -5'] = float(models.Vote.valid.filter(justice=k.justice, term=term, weighted_majvotes=-5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
+            court_row['kennedy share 5'] = float(models.Vote.valid.filter(justice=k.justice, term=term, weighted_majvotes=5, majority="2", decisiondirection__in=[u'2', u'1']).count()) / court_cases.count()
         except ZeroDivisionError:
             pass
 
         payload.append(court_row)
 
     payload = sorted(payload, key=lambda x:(x['term']))
-
-    # return HttpResponse(json.dumps(payload))
 
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response)
@@ -222,12 +221,12 @@ def cases_by_court(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
 
     # Limit to the Vinson 1 court, 1946 to present.
-    courts = [(c.naturalcourt, c.common_name, c.get_date_display()) for c in models.NaturalCourt.objects.filter(naturalcourt__gte=79)]
+    courts = [(c.naturalcourt, c.common_name()) for c in models.NaturalCourt.objects.filter(naturalcourt__gte=79)]
 
-    SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
+    SHARE_KEYS = ("share -10","share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9","share 10")
 
     def init_court_row():
         payload = {}
@@ -249,24 +248,22 @@ def cases_by_court(request):
             output = output + (row[key],)
         return output
 
-    for naturalcourt,name,dates in courts:
-        court_cases = models.MeritsCase.valid_objects.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'nyt_weighted_majvotes', 'term', 'decisiondirection')
+    for naturalcourt,name in courts:
+        court_cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = name
-        court_row['start_date'] = dates.split(' - ')[0].strip()
+        court_row['naturalcourt'] = naturalcourt
         for c in court_cases:
-            if c['nyt_weighted_majvotes']:
-                court_row['share %s' % c['nyt_weighted_majvotes']] += 1
+            if c['weighted_majvotes']:
+                court_row['share %s' % c['weighted_majvotes']] += 1
         court_row = compute_shares(court_row, court_cases.count())
         payload.append(court_row)
 
-    payload = sorted(payload, key=lambda x:(x['start_date']))
-
-    # return HttpResponse(json.dumps(payload))
+    payload = sorted(payload, key=lambda x:(x['naturalcourt']))
 
     response = HttpResponse(content_type='text/csv')
     writer = csv.writer(response)
-    header = ("term", "share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9","barwidth")
+    header = ("term","share -10","share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9","share 10","barwidth")
     writer.writerow(header)
     for row in payload:
         writer.writerow(produce_row(row, header))
