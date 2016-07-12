@@ -8,6 +8,7 @@ from django.views.generic import ListView, DetailView
 from django.shortcuts import render_to_response, redirect
 from django.http import HttpResponse
 from django.conf import settings
+from django.db import connection
 from django.db.models import Sum, Count
 import ftfy
 from lxml import etree
@@ -15,6 +16,70 @@ from lxml import etree
 from clerk import utils as clerk_utils
 from scotus import models
 from scotus import utils
+
+VOTES_VIEW_SQL = """CREATE OR REPLACE VIEW scotus_votes as
+       SELECT c.*, r.* from votes as r
+           LEFT JOIN override_cases as c on r.caseissuesid = c.case_caseissuesid
+"""
+
+CASES_VIEW_SQL = """CREATE OR REPLACE VIEW scotus_cases as
+       SELECT c.*, r.* from cases as r
+           LEFT JOIN override_cases as c on r.caseissuesid = c.case_caseissuesid
+"""
+
+### VIEWS RETURNING HTML
+
+def resolve_current_cases(request):
+    if request.method == "GET":
+        context = utils.make_context(request)
+        term_cases = [a['caseissuesid'] for a in models.MeritsCase.objects.filter(term=utils.current_term()).values('caseissuesid')]
+        # .filter(decisiontype__in=["1", "7"])\
+        context['cases'] = models.CurrentCase.objects\
+                                .exclude(caseissuesid__in=term_cases)\
+                                .filter(docketid__endswith="-01")\
+                                .filter(caseissuesid__endswith="-01")\
+                                .order_by('datedecision')
+        return render_to_response('resolve_current_case.html', context)
+
+    if request.method == "POST":
+        if request.POST.get('caseissuesid', None):
+            caseissuesid = request.POST.get('caseissuesid', None)
+            c = models.CurrentCase.objects.get(caseissuesid=caseissuesid)
+            votes = list(c.votes())
+
+            c = c.dict()
+            c['caseissuesid'] = caseissuesid
+
+            m = models.ScdbCase(**c)
+            m.save()
+
+            for vote in votes:
+                vote = vote.dict()
+                vote['caseissuesid'] = caseissuesid
+                v = models.Vote(**vote)
+                v.save()
+
+            cursor = connection.cursor()
+            cursor.execute(CASES_VIEW_SQL)
+            cursor.execute(VOTES_VIEW_SQL)
+
+            return HttpResponse(json.dumps({"success": True, "case": c}))
+        return HttpResponse(json.dumps({"success": False, "case": None}))
+
+def edit_case(request, caseissuesid):
+    context = utils.make_context(request)
+    return render_to_response('edit_case.html', context)
+
+def edit_justice(request, justiceid):
+    context = utils.make_context(request)
+    return render_to_response('edit_justice.html', context)
+
+def index(request):
+    context = utils.make_context(request)
+    return render_to_response('index.html', context)
+
+### UTILITY VIEWS
+### NO HTML PAGES
 
 def liberal_decisions_by_justice(request, term):
     params = dict(request.GET)

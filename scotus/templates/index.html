@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>The Supreme Court <small>DATA ARCHIVE</small></h1>
+    </div>
+</div>
+
+<hr/>
+
+<div class="row">
+    <div class="col-md-6">
+        <h2>Justices</h2>
+        <h3></h3>
+    </div>
+    <div class="col-md-6">
+        <h2>Cases</h2>
+        <h4><a href="/scotus/case/current/">Reconcile current cases</a></h4>
+        <p>Identify new current cases and import them into our <code>cases</code> table.</p>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <h2>Admin</h2>
+        <h4><a href="#">Reconcile current cases</a></h4>
+        <p>Administrative interface for the application.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+{% endblock %}

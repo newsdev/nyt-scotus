@@ -1,9 +1,28 @@
+import datetime
 import json
+import os
 
+from django.template.context_processors import csrf
 from django.core import serializers
 from django.db import models
 import ftfy
 import smartypants
+
+
+def current_term():
+    now = datetime.datetime.now()
+    if now.month < 10:
+        return "%s" % (now.year - 1)
+    else:
+        return "%s" % now.year
+
+
+def make_context(request):
+    payload = {}
+    payload['current_term'] = current_term()
+    payload['csrf_token'] = csrf(request)['csrf_token']
+    payload['CDN_URL'] = os.environ.get('ELEX_ADMIN_CDN_URL', 'http://int.nyt.com.s3.amazonaws.com/cdn')
+    return payload
 
 
 class ValidCasesManager(models.Manager):

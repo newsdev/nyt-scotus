@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style type="text/css">
+tr.reconcile-row:hover {
+    background-color: #eee;
+}
+a.reconcile-button:hover {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+    color: #fff;
+}
+#alert-holder {
+    z-index:99999;
+}
+button.close {
+    padding: 0 0 0 8px;
+}
+</style>
+<div id="alert-holder" style="position:fixed; top:10px; right: 10px;"></div>
+
+<div class="row" style="margin-bottom:20px;">
+    <div class="col-md-12">
+        <h1>Reconcile current term ({{ current_term }}) cases</h1>
+    </div>
+    <div class="col-md-12">
+        <p>This app loads from the Supreme Court Database every afternoon. New cases need to be manually reconciled to avoid duplicates. Clicking <strong>Reconcile</strong> copies the case and vote data from the <code>current_cases</code> table into the <code>cases</code> table. Cases that exist in both tables will not show up here.</p>
+    </div>
+</div>
+
+<div class="row" style="margin-bottom:10px;">
+    <div class="col-md-12">
+        <a href="/scotus/">&larr; Home</a>
+    </div>
+</div>
+
+<div class="row current-cases">
+    <div class="col-md-12">
+    {% if cases %}
+
+    <table class="table">
+    <tr>
+        <th>Date</th>
+        <th>Casename</th>
+        <th>Docket</th>
+        <th>Votes</th>
+        <th></th>
+    </tr>
+    {% for case in cases %}
+        <tr class="reconcile-row" id="case-{{ case.caseissuesid }}">
+            <td style="width: 120px;">{{ case.datedecision }}</td>
+            <td style="width: 350px;">{{ case.casename }}</td>
+            <td>{{ case.docket }}</td>
+            <td>{{ case.majvotes }}-{{ case.minvotes }}</td>
+            <td><a class="btn btn-default reconcile-button" href="#">Reconcile</a></td>
+        </tr>
+    {% endfor %}
+    </table>
+    {% else %}
+    <h5>There are no unresolved cases.</h5>
+    {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extrajs %}
+<script type="text/javascript">
+    $(function(){
+        var pop_alert = function(headline, response){
+            message_text = "Failed; please check the logs."
+            if (response.success) {
+                message_text = "Successfully reconciled " + response.case.casename + "."
+            }
+            var alert_text = '<div class="alert alert-danger" role="alert"><strong>'+ headline + '</strong>: ' + message_text + ' <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
+            $('#alert-holder').html(alert_text);
+            if (response.success) {
+                $('#alert-holder .alert').removeClass('alert-danger').addClass('alert-success')
+            }
+        }
+        var resolve_case = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var $this = $(this);
+            var c = $this.parent('td').parent('tr').attr('id').split('case-')[1];
+            var data = {caseissuesid: c, csrfmiddlewaretoken: "{{ csrf_token }}"};
+            $('#case-' + c).hide();
+            $.ajax({
+                type: 'POST',
+                url: '/scotus/case/current/',
+                data: data,
+                dataType: 'JSON',
+                success: function(response){
+                    console.log(response);
+                    $('#case-' + c).remove();
+                    pop_alert("Reconciled case", response);
+                }
+            });
+        }
+
+        $('a.reconcile-button').on('click', resolve_case);
+    });
+</script>
+{% endblock %}
