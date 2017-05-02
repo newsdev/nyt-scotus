@@ -1,5 +1,9 @@
 import json
-from sets import Set
+
+try:
+    set
+except:
+    from sets import Set as set
 
 from django.contrib.postgres.fields import ArrayField
 from django.core import serializers

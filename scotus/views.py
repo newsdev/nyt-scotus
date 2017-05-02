@@ -92,7 +92,6 @@ def scores_by_natural_court(request):
     return HttpResponse(json.dumps(payload))
 
 def court_scores_by_term(request):
-    print [c.dict().keys() for c in models.CourtTerm.objects.all()]
     payload = sorted([c.dict() for c in models.CourtTerm.objects.all()], key=lambda x: x['pk'])
     return HttpResponse(json.dumps(payload))
 

@@ -6,7 +6,9 @@ SECRET_KEY = ')(hv#e)wqd-9pwuvd94wq5-snmz+@m(&-g5e74&zg)+geh-xqe'
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost.newsdev.net'
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
