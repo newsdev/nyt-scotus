@@ -3,7 +3,7 @@ import json
 try:
     set
 except:
-    from sets import Set as set
+    from sets import set as set
 
 from django.contrib.postgres.fields import ArrayField
 from django.core import serializers
@@ -379,7 +379,7 @@ class MeritsCase(utils.BaseScotusModel):
         ordering = ['-term', 'casename']
 
     def __unicode__(self):
-        return unicode(self.casename)
+        return self.casename
 
     def votes(self):
         if self.majvotes and self.minvotes:
@@ -458,7 +458,7 @@ class ScdbCase(utils.BaseScotusModel):
         ordering = ['-term', 'casename']
 
     def __unicode__(self):
-        return unicode(self.casename)
+        return self.casename
 
     def votes(self):
         if self.majvotes and self.minvotes:
@@ -508,7 +508,7 @@ class Justice(utils.BaseScotusModel):
         return self.get_name()
 
     def get_name(self):
-        return unicode(self.justicename)
+        return self.justicename
 
     def common_cases(self, justices, term=None, naturalcourt=None, maxvotes=None):
         """
@@ -523,9 +523,9 @@ class Justice(utils.BaseScotusModel):
             maxvotes = maxvotes.split(',')
             positions = positions.filter(majvotes__in=maxvotes)
         votes = []
-        votes.append(Set([p['caseid'] for p in positions.filter(justice=self.justice).values('caseid')]))
+        votes.append(set([p['caseid'] for p in positions.filter(justice=self.justice).values('caseid')]))
         for j in justices:
-            votes.append(Set([p['caseid'] for p in positions.filter(justicename=j).values('caseid')]))
+            votes.append(set([p['caseid'] for p in positions.filter(justicename=j).values('caseid')]))
 
         intersecting_cases = votes[0]
         for justice_case in votes[1:]:
@@ -537,10 +537,10 @@ class Justice(utils.BaseScotusModel):
         Votes where this Justice and all Justices in the list `justices` were in the majority.
         """
         votes = []
-        votes.append(Set([p['caseid'] for p in Vote.objects.filter(justice=self.justice, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
+        votes.append(set([p['caseid'] for p in Vote.objects.filter(justice=self.justice, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
 
         for j in justices:
-            votes.append(Set([p['caseid'] for p in Vote.objects.filter(justicename=j, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
+            votes.append(set([p['caseid'] for p in Vote.objects.filter(justicename=j, caseid__in=cc, vote__in=['1', '3', '4', '5']).values('caseid')]))
 
         intersecting_votes = votes[0]
         for vote in votes[1:]:
@@ -553,10 +553,10 @@ class Justice(utils.BaseScotusModel):
         Votes where this Justice and all Justices in the list `justices` were in the minority.
         """
         votes = []
-        votes.append(Set([p['caseid'] for p in Vote.objects.filter(justice=self.justice, caseid__in=cc, vote__in=['2']).values('caseid')]))
+        votes.append(set([p['caseid'] for p in Vote.objects.filter(justice=self.justice, caseid__in=cc, vote__in=['2']).values('caseid')]))
 
         for j in justices:
-            votes.append(Set([p['caseid'] for p in Vote.objects.filter(justicename=j, caseid__in=cc, vote__in=['2']).values('caseid')]))
+            votes.append(set([p['caseid'] for p in Vote.objects.filter(justicename=j, caseid__in=cc, vote__in=['2']).values('caseid')]))
 
         intersecting_votes = votes[0]
         for vote in votes[1:]:
