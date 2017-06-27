@@ -17,62 +17,32 @@ from clerk import utils as clerk_utils
 from scotus import models
 from scotus import utils
 
-VOTES_VIEW_SQL = """CREATE OR REPLACE VIEW scotus_votes as
-       SELECT c.*, r.* from votes as r
-           LEFT JOIN override_cases as c on r.caseissuesid = c.case_caseissuesid
-"""
-
-CASES_VIEW_SQL = """CREATE OR REPLACE VIEW scotus_cases as
-       SELECT c.*, r.* from cases as r
-           LEFT JOIN override_cases as c on r.caseissuesid = c.case_caseissuesid
-"""
-
-### VIEWS RETURNING HTML
-
-def resolve_current_cases(request):
-    if request.method == "GET":
-        context = utils.make_context(request)
-        term_cases = [a['caseissuesid'] for a in models.MeritsCase.objects.filter(term=utils.current_term()).values('caseissuesid')]
-        # .filter(decisiontype__in=["1", "7"])\
-        context['cases'] = models.CurrentCase.objects\
-                                .exclude(caseissuesid__in=term_cases)\
-                                .filter(docketid__endswith="-01")\
-                                .filter(caseissuesid__endswith="-01")\
-                                .order_by('datedecision')
-        return render_to_response('resolve_current_case.html', context)
-
-    if request.method == "POST":
-        if request.POST.get('caseissuesid', None):
-            caseissuesid = request.POST.get('caseissuesid', None)
-            c = models.CurrentCase.objects.get(caseissuesid=caseissuesid)
-            votes = list(c.votes())
-
-            c = c.dict()
-            c['caseissuesid'] = caseissuesid
-
-            m = models.ScdbCase(**c)
-            m.save()
-
-            for vote in votes:
-                vote = vote.dict()
-                vote['caseissuesid'] = caseissuesid
-                v = models.Vote(**vote)
-                v.save()
-
-            cursor = connection.cursor()
-            cursor.execute(CASES_VIEW_SQL)
-            cursor.execute(VOTES_VIEW_SQL)
-
-            return HttpResponse(json.dumps({"success": True, "case": c}))
-        return HttpResponse(json.dumps({"success": False, "case": None}))
-
-def edit_case(request, caseissuesid):
+def case_detail(request):
     context = utils.make_context(request)
-    return render_to_response('edit_case.html', context)
+    return render_to_response('case_detail.html', context)
 
-def edit_justice(request, justiceid):
+def case_list(request):
     context = utils.make_context(request)
-    return render_to_response('edit_justice.html', context)
+
+    acceptable_filters = ('term',)
+
+    query_filters = {}
+
+    for k,v in request.GET.items():
+        if k in acceptable_filters:
+            query_filters[k] = v
+
+    context['cases'] = models.Case.valid.filter(**query_filters)
+
+    return render_to_response('case_list.html', context)
+
+def case_detail(request):
+    context = utils.make_context(request)
+    return render_to_response('case_detail.html', context)
+
+def justice_detail(request):
+    context = utils.make_context(request)
+    return render_to_response('justice_detail.html', context)
 
 def index(request):
     context = utils.make_context(request)
@@ -121,7 +91,7 @@ def filter_and_sum_api(request):
         values = params['values'][-1].split(',')
         del params['values']
 
-    query = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
+    query = models.Case.valid.filter(decisiondirection__in=[u'2', u'1'])
     for k,v in params.items():
         kw = {}
         if "__in" in k:
@@ -171,7 +141,7 @@ def voting_clusters(request, justicename):
 
         for pk in agree[1]:
             case_dict = {}
-            c = models.MeritsCase.objects.get(caseid=pk)
+            c = models.Case.objects.get(caseid=pk)
             case_dict['casename'] = c.casename
             case_dict['term'] = c.term
             case_dict['spit'] = c.votes()
@@ -179,7 +149,7 @@ def voting_clusters(request, justicename):
 
         for pk in disagree[1]:
             case_dict = {}
-            c = models.MeritsCase.objects.get(caseid=pk)
+            c = models.Case.objects.get(caseid=pk)
             case_dict['casename'] = c.casename
             case_dict['term'] = c.term
             case_dict['spit'] = c.votes()
@@ -201,7 +171,7 @@ def cases_by_term(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.Case.valid.filter(decisiondirection__in=[u'2', u'1'])
     terms = range(1946, int(clerk_utils.current_term()) + 1)
 
     SHARE_KEYS = ("share -9","share -8","share -7","share -6","share -5","share 5","share 6","share 7","share 8","share 9")
@@ -238,7 +208,7 @@ def cases_by_term(request):
     p = models.Justice.objects.get(justicename="LFPowell")
 
     for term in terms:
-        court_cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.Case.valid.filter(decisiondirection__in=[u'2', u'1']).filter(term=term).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = term
         for c in court_cases:
@@ -285,7 +255,7 @@ def cases_by_court(request):
     """
     payload = []
 
-    cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1'])
+    cases = models.Case.valid.filter(decisiondirection__in=[u'2', u'1'])
 
     # Limit to the Vinson 1 court, 1946 to present.
     courts = [(c.naturalcourt, c.common_name()) for c in models.NaturalCourt.objects.filter(naturalcourt__gte=79)]
@@ -313,7 +283,7 @@ def cases_by_court(request):
         return output
 
     for naturalcourt,name in courts:
-        court_cases = models.MeritsCase.valid.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
+        court_cases = models.Case.valid.filter(decisiondirection__in=[u'2', u'1']).filter(naturalcourt=naturalcourt).values('casename', 'weighted_majvotes', 'term', 'decisiondirection')
         court_row = dict(init_court_row())
         court_row['term'] = name
         court_row['naturalcourt'] = naturalcourt

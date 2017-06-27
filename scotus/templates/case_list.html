@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<table class="table">
+  <tr>
+    <th>name</th>
+    <th>id</th>
+    <th>term</th>
+  </tr>
+  {% for case in cases %}
+  <tr>
+    <td>{{ case.casename }}</td>
+    <td>{{ case.caseissuesid }}</td>
+    <td>{{ case.term }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
