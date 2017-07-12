@@ -246,10 +246,10 @@ class Justice(utils.BaseScotusModel):
     to be hand-edited, e.g., 'current' or the
     various dates for nomination / confirmation.
     """
-    justice = models.IntegerField(primary_key=True)
+    justice = models.CharField(max_length=255, primary_key=True)
     justicename = models.CharField(max_length=255, blank=True, null=True)
     full_name = models.CharField(max_length=255, blank=True, null=True)
-    chief_justice = models.CharField(max_length=255, blank=True, null=True)
+    chief_justice = models.NullBooleanField()
     confirmation_votes_for = models.CharField(max_length=255, blank=True, null=True)
     confirmation_votes_against = models.CharField(max_length=255, blank=True, null=True)
     qualifications_score = models.FloatField(blank=True, null=True)
@@ -259,10 +259,15 @@ class Justice(utils.BaseScotusModel):
         managed = False
         db_table = 'scotus_justices'
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __unicode__(self):
         return self.get_name()
 
     def get_name(self):
+        if self.full_name and self.full_name != '-':
+            return self.full_name
         return self.justicename
 
     def common_cases(self, justices, term=None, naturalcourt=None, maxvotes=None):
@@ -397,6 +402,9 @@ class Vote(utils.BaseScotusModel):
         db_table = 'votes'
         ordering = ['-term', 'casename']
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __unicode__(self):
         return "%s in %s" % (self.justice_obj(), self.case_obj())
 
@@ -406,8 +414,8 @@ class Vote(utils.BaseScotusModel):
         return self.justice
 
     def case_obj(self):
-        if MeritsCase.objects.filter(caseid=self.caseid).count() == 1:
-            return MeritsCase.objects.get(caseid=self.caseid)
+        if Case.objects.filter(caseid=self.caseid).count() == 1:
+            return Case.objects.get(caseid=self.caseid)
         return self.casename
 
     def is_majority(self):

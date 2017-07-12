@@ -8,3 +8,4 @@ pytz
 requests
 smartypants==1.8.6
 fabric3
+ujson
