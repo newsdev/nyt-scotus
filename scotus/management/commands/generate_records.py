@@ -9,8 +9,12 @@ from scotus.models import Vote
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        """
+        Base command that runs when the management command is triggered.
+        """
+        justices = settings.ACTIVE_JUSTICES + settings.INACTIVE_JUSTICES
         payload = {}
-        for j in settings.ACTIVE_JUSTICES:
+        for j in justices:
             payload[j['justicename']] = {
                 "terms": {},
                 "all-time": {
@@ -22,7 +26,11 @@ class Command(BaseCommand):
                     4: {"majority": 0, "dissent": 0},
                 }
             }
-            votes = [(v['majvotes'], v['majority'], v['term']) for v in Vote.valid.filter(justice=j['justice']).values('majvotes', 'majority', 'term')]
+            votes = [
+                (v['majvotes'], v['majority'], v['term'])\
+                for v in Vote.valid.filter(justice=j['justice'])\
+                    .values('majvotes', 'majority', 'term')
+            ]
             for majvotes, majority, term in votes:
                 if not payload[j['justicename']]['terms'].get(term, None):
                     payload[j['justicename']]['terms'][term] = {

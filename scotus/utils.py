@@ -1,15 +1,16 @@
 import datetime
-import json
-import os
 
 from django.template.context_processors import csrf
 from django.core import serializers
 from django.db import models
 import ftfy
 import smartypants
-
+import ujson as json
 
 def current_term():
+    """
+    Utility method for deciding the current term from today's date.
+    """
     now = datetime.datetime.now()
     if now.month < 10:
         return "%s" % (now.year - 1)
@@ -18,10 +19,12 @@ def current_term():
 
 
 def make_context(request):
+    """
+    Utility method for adding context we need to templates.
+    """
     payload = {}
     payload['current_term'] = current_term()
     payload['csrf_token'] = csrf(request)['csrf_token']
-    payload['CDN_URL'] = os.environ.get('ELEX_ADMIN_CDN_URL', 'http://int.nyt.com.s3.amazonaws.com/cdn')
     return payload
 
 
@@ -36,6 +39,9 @@ class ValidCasesManager(models.Manager):
     any aggregations or sums of justice votes or court votes.
     """
     def get_queryset(self):
+        """
+        Overrides the get_queryset method on this model manager.
+        """
         return super(ValidCasesManager, self).get_queryset()\
             .filter(decisiontype__in=["1", "7"])\
             .filter(docketid__endswith="-01")\
@@ -43,11 +49,36 @@ class ValidCasesManager(models.Manager):
 
 
 class BaseScotusModel(models.Model):
-
+    """
+    A base model class for our SCOTUS models to inherit.
+    Abstracts out some methods and such.
+    """
     class Meta:
         abstract = True
 
+    def dict(self):
+        """
+        A sane method for returning a dict from a Django model.
+        """
+        serialized = serializers.serialize('json', [self])
+        payload = dict(json.loads(serialized)[0]['fields'])
+        payload['pk'] = json.loads(serialized)[0]['pk']
+        for key,value in payload.items():
+            if value:
+                try:
+                    payload[key] = ftfy.fix_text(value.strip())
+                except TypeError:
+                    pass
+                except UnicodeError:
+                    pass
+                except AttributeError:
+                    pass
+        return payload
+
     def smart_dict(self):
+        """
+        A cleaner, smartypants-ified dict.
+        """
         payload = self.dict()
         for key,value in payload.items():
             if value:
@@ -61,24 +92,14 @@ class BaseScotusModel(models.Model):
                     pass
         return payload
 
-    def dict(self):
-        serialized = serializers.serialize('json', [self])
-        payload = dict(json.loads(serialized)[0]['fields'])
-        payload[u'pk'] = json.loads(serialized)[0]['pk']
-        for key,value in payload.items():
-            if value:
-                try:
-                    payload[key] = ftfy.fix_text(value.strip())
-                except TypeError:
-                    pass
-                except UnicodeError:
-                    pass
-                except AttributeError:
-                    pass
-        return payload
-
     def json(self):
+        """
+        Quickie JSON method.
+        """
         return json.dumps(self.dict())
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 def webfix_unicode(possible_string):
@@ -86,24 +107,23 @@ def webfix_unicode(possible_string):
     This is ugly but it will create Times-approved HTML
     out of terrible cut-and-paste from decision text.
     """
-    CHAR_MAP = [
-        (u'\xa7', u'&sect;'),
-        (u'\u2014', u'&mdash;'),
-        (u'\u2013', u'&ndash;'),
-        (u'\x97', u'&mdash;'),
-        (u'\xa4', u'&euro;'),
-        (u'\u201c', u'"'),
-        (u'\u201d', u'"'),
-        (u'\x96', u'&#150;'),
+    character_map = [
+        ('\xa7', '&sect;'),
+        ('\u2014', '&mdash;'),
+        ('\u2013', '&ndash;'),
+        ('\x97', '&mdash;'),
+        ('\xa4', '&euro;'),
+        ('\u201c', '"'),
+        ('\u201d', '"'),
+        ('\x96', '&#150;'),
     ]
 
-    if isinstance(possible_string, basestring):
+    if isinstance(possible_string, str):
         string = possible_string
         string = string.strip()
-        for char, replace_char in CHAR_MAP:
+        for char, replace_char in character_map:
             string = string.replace(char, replace_char)
         string = string.decode('utf-8')
-        string = unicode(string)
         string = ftfy.fix_text(string)
         string = smartypants.smartypants(string)
         return string

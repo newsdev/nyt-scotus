@@ -1,75 +1,35 @@
-import json
-
-try:
-    set
-except:
-    from sets import set as set
-
-from django.contrib.postgres.fields import ArrayField
-from django.core import serializers
 from django.db import models
-import ftfy
-import smartypants
 
 from clerk import maps
 from scotus import utils
 
 
-# class OverrideCase(BaseModel):
-#     case_caseissuesid = models.CharField(max_length=255, primary_key=True)
-#     nyt_casename = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_short_name = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_opinion_pdf_url = models.TextField(blank=True, null=True)  # This field type is a guess.
-#     nyt_argument_pdf = models.TextField(blank=True, null=True)  # This field type is a guess.
-#     nyt_audio_mp3 = models.TextField(blank=True, null=True)  # This field type is a guess.
-#     nyt_question = models.TextField(blank=True, null=True)
-#
-#     class Meta:
-#         managed = False
-#         db_table = 'override_cases'
-#
-#
-# class OverrideJustice(BaseModel):
-#     justice_justice = models.IntegerField(primary_key=True)
-#     nyt_full_name = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_last_name = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_date_confirmed = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_date_nominated = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_date_sworn_in = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_first_term = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_last_term = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_first_naturalcourt = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_last_naturalcourt = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_family_status = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_non_white = models.NullBooleanField()
-#     nyt_birth_year = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_death_year = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_religion = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_seat = models.CharField(max_length=255, blank=True, null=True)
-#     nyt_preceded_by = models.IntegerField(blank=True, null=True)
-#     nyt_succeeded_by = models.IntegerField(blank=True, null=True)
-#
-#     class Meta:
-#         managed = False
-#         db_table = 'override_justices'
-
-
 class NaturalCourt(utils.BaseScotusModel):
+    """
+    Represents a single natural court, e.g., a combination of Justices in their seats.
+    When a Justice leaves / enters the court, a new natural court will be formed.
+    """
     naturalcourt = models.IntegerField(primary_key=True)
     chief = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'naturalcourts'
 
     def __unicode__(self):
-        return self.common_name()
-
-    def common_name(self):
         return "%s - %s" % (self.naturalcourt, self.chief)
 
     def court_terms(self):
-        return [{"term": f.term, "score": f.martin_quinn_score} for f in CourtTerm.objects.filter(naturalcourt=self.naturalcourt)]
+        """
+        Returns a dictionary for each term in a natural court and the MQ score for that term.
+        """
+        return [
+            {"term": f.term, "score": f.martin_quinn_score}\
+            for f in CourtTerm.objects.filter(naturalcourt=self.naturalcourt)
+        ]
 
 
 class CourtTerm(utils.BaseScotusModel):
@@ -130,8 +90,12 @@ class CourtTerm(utils.BaseScotusModel):
     alito = models.FloatField(blank=True, null=True)
     sotomayor = models.FloatField(blank=True, null=True)
     kagan = models.FloatField(blank=True, null=True)
+    objects = models.Manager()
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'courts'
 
@@ -139,6 +103,9 @@ class CourtTerm(utils.BaseScotusModel):
         return "%s %s" % (self.term, self.med)
 
     def justice_terms(self):
+        """
+        Return Django JusticeTerm model objects for this term.
+        """
         return JusticeTerm.objects.filter(term=self.term)
 
 
@@ -155,59 +122,97 @@ class Case(utils.BaseScotusModel):
     docketid = models.CharField(max_length=255, null=True, blank=True)
     caseissuesid = models.CharField(max_length=255, primary_key=True)
     datedecision = models.DateField(blank=True, null=True)
-    decisiontype = models.CharField(choices=maps.DECISION_TYPE_CHOICES, max_length=255, null=True, blank=True)
+    decisiontype = models.CharField(
+        choices=maps.DECISION_TYPE_CHOICES, max_length=255, null=True, blank=True)
     uscite = models.CharField(max_length=255, null=True, blank=True)
     sctcite = models.CharField(max_length=255, null=True, blank=True)
     ledcite = models.CharField(max_length=255, null=True, blank=True)
     lexiscite = models.CharField(max_length=255, null=True, blank=True)
-    naturalcourt = models.CharField(choices=maps.NATURAL_COURT_CHOICES, max_length=255, db_index=True)
+    naturalcourt = models.CharField(
+        choices=maps.NATURAL_COURT_CHOICES, max_length=255, db_index=True)
     chief = models.CharField(max_length=255, null=True, blank=True)
     casename = models.CharField(max_length=255, null=True, blank=True)
     dateargument = models.DateField(blank=True, null=True)
     # daterearg = models.DateField(blank=True, null=True)
-    petitioner = models.CharField(choices=maps.PETITIONER_RESPONDENT_CHOICES, max_length=255, db_index=True, blank=True, null=True)
-    petitionerstate = models.CharField(choices=maps.STATE_CHOICES, max_length=255, blank=True, null=True)
-    respondent = models.CharField(choices=maps.PETITIONER_RESPONDENT_CHOICES, max_length=255, blank=True, null=True)
-    respondentstate = models.CharField(choices=maps.STATE_CHOICES, max_length=255, blank=True, null=True)
-    jurisdiction = models.CharField(choices=maps.JURISDICTION_CHOICES, max_length=255, db_index=True, null=True, blank=True)
-    adminaction = models.CharField(choices=maps.ADMINISTRATIVE_ACTION_CHOICES, max_length=255, null=True, blank=True)
-    adminactionstate = models.CharField(choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
-    threejudgefdc = models.CharField(choices=maps.THREE_JUDGE_DISTRICT_COURT_CHOICES, max_length=255, null=True, blank=True)
-    caseorigin = models.CharField(choices=maps.CASE_ORIGIN_CHOICES, max_length=255, null=True, blank=True)
-    caseoriginstate = models.CharField(choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
-    casesource = models.CharField(choices=maps.CASE_ORIGIN_CHOICES, max_length=255, null=True, blank=True)
-    casesourcestate = models.CharField(choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
-    certreason = models.CharField(choices=maps.CERT_REASON_OPTIONS, max_length=255, null=True, blank=True)
-    lcdisagreement = models.CharField(choices=maps.LOWER_COURT_AGREEMENT_CHOICES, max_length=255, null=True, blank=True)
-    lcdisposition = models.CharField(choices=maps.LOWER_COURT_DISPOSITION_CHOICES, max_length=255, null=True, blank=True)
-    # lcdispositiondirection = models.CharField(choices=maps.DECISION_DIRECTION_CHOICES, max_length=255, null=True, blank=True)
-    # lcdecisiondirection = models.CharField(choices=maps.DECISION_DIRECTION_CHOICES, max_length=255, null=True, blank=True)
-    declarationuncon = models.CharField(choices=maps.UNCONSTITUTIONALITY_CHOICES, max_length=255, null=True, blank=True)
-    casedisposition = models.CharField(choices=maps.CASE_DISPOSITION_CHOICES, max_length=255, null=True, blank=True)
-    casedispositionunusual = models.CharField(choices=maps.CASE_DISPOSITION_UNUSUAL_CHOICES, max_length=255, null=True, blank=True)
-    partywinning = models.CharField(choices=maps.WINNING_PARTY_CHOICES, max_length=255, null=True, blank=True)
-    precedentalteration = models.CharField(choices=maps.PRECEDENT_ALTERATION_CHOICES, max_length=255, null=True, blank=True)
-    voteunclear = models.CharField(choices=maps.VOTE_UNCLEAR_CHOICES, max_length=255, null=True, blank=True)
-    issue = models.CharField(choices=maps.ISSUE_CHOICES, max_length=255, blank=True, null=True, db_index=True)
-    issuearea = models.CharField(choices=maps.ISSUE_AREA_CHOICES, max_length=255, blank=True, null=True, db_index=True)
-    decisiondirection = models.CharField(choices=maps.DECISION_DIRECTION_CHOICES, max_length=255, db_index=True, null=True, blank=True)
-    decisiondirectiondissent = models.CharField(choices=maps.DECISION_DIRECTION_DISSENT_CHOICES, max_length=255, db_index=True, null=True, blank=True)
-    authoritydecision1 = models.CharField(choices=maps.DECISION_AUTHORITY_CHOICES, max_length=255, null=True, blank=True)
-    authoritydecision2 = models.CharField(choices=maps.DECISION_AUTHORITY_CHOICES, max_length=255, null=True, blank=True)
-    lawtype = models.CharField(choices=maps.DECISION_LAW_TYPE_CHOICES, max_length=255, null=True, blank=True)
-    lawsupp = models.CharField(choices=maps.LAW_SUPP_CHOICES, max_length=255, null=True, blank=True)
+    petitioner = models.CharField(
+        choices=maps.PETITIONER_RESPONDENT_CHOICES, max_length=255, db_index=True, blank=True, null=True)
+    petitionerstate = models.CharField(
+        choices=maps.STATE_CHOICES, max_length=255, blank=True, null=True)
+    respondent = models.CharField(
+        choices=maps.PETITIONER_RESPONDENT_CHOICES, max_length=255, blank=True, null=True)
+    respondentstate = models.CharField(
+        choices=maps.STATE_CHOICES, max_length=255, blank=True, null=True)
+    jurisdiction = models.CharField(
+        choices=maps.JURISDICTION_CHOICES, max_length=255, db_index=True, null=True, blank=True)
+    adminaction = models.CharField(
+        choices=maps.ADMINISTRATIVE_ACTION_CHOICES, max_length=255, null=True, blank=True)
+    adminactionstate = models.CharField(
+        choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
+    threejudgefdc = models.CharField(
+        choices=maps.THREE_JUDGE_DISTRICT_COURT_CHOICES, max_length=255, null=True, blank=True)
+    caseorigin = models.CharField(
+        choices=maps.CASE_ORIGIN_CHOICES, max_length=255, null=True, blank=True)
+    caseoriginstate = models.CharField(
+        choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
+    casesource = models.CharField(
+        choices=maps.CASE_ORIGIN_CHOICES, max_length=255, null=True, blank=True)
+    casesourcestate = models.CharField(
+        choices=maps.STATE_CHOICES, max_length=255, null=True, blank=True)
+    certreason = models.CharField(
+        choices=maps.CERT_REASON_OPTIONS, max_length=255, null=True, blank=True)
+    lcdisagreement = models.CharField(
+        choices=maps.LOWER_COURT_AGREEMENT_CHOICES, max_length=255, null=True, blank=True)
+    lcdisposition = models.CharField(
+        choices=maps.LOWER_COURT_DISPOSITION_CHOICES, max_length=255, null=True, blank=True)
+    # lcdispositiondirection = models.CharField(
+    #    choices=maps.DECISION_DIRECTION_CHOICES, max_length=255, null=True, blank=True)
+    # lcdecisiondirection = models.CharField(
+    #    choices=maps.DECISION_DIRECTION_CHOICES, max_length=255, null=True, blank=True)
+    declarationuncon = models.CharField(
+        choices=maps.UNCONSTITUTIONALITY_CHOICES, max_length=255, null=True, blank=True)
+    casedisposition = models.CharField(
+        choices=maps.CASE_DISPOSITION_CHOICES, max_length=255, null=True, blank=True)
+    casedispositionunusual = models.CharField(
+        choices=maps.CASE_DISPOSITION_UNUSUAL_CHOICES, max_length=255, null=True, blank=True)
+    partywinning = models.CharField(
+        choices=maps.WINNING_PARTY_CHOICES, max_length=255, null=True, blank=True)
+    precedentalteration = models.CharField(
+        choices=maps.PRECEDENT_ALTERATION_CHOICES, max_length=255, null=True, blank=True)
+    voteunclear = models.CharField(
+        choices=maps.VOTE_UNCLEAR_CHOICES, max_length=255, null=True, blank=True)
+    issue = models.CharField(
+        choices=maps.ISSUE_CHOICES, max_length=255, blank=True, null=True, db_index=True)
+    issuearea = models.CharField(
+        choices=maps.ISSUE_AREA_CHOICES, max_length=255, blank=True, null=True, db_index=True)
+    decisiondirection = models.CharField(
+        choices=maps.DECISION_DIRECTION_CHOICES, 
+        max_length=255, db_index=True, null=True, blank=True)
+    decisiondirectiondissent = models.CharField(
+        choices=maps.DECISION_DIRECTION_DISSENT_CHOICES,
+        max_length=255, db_index=True, null=True, blank=True)
+    authoritydecision1 = models.CharField(
+        choices=maps.DECISION_AUTHORITY_CHOICES, max_length=255, null=True, blank=True)
+    authoritydecision2 = models.CharField(
+        choices=maps.DECISION_AUTHORITY_CHOICES, max_length=255, null=True, blank=True)
+    lawtype = models.CharField(
+        choices=maps.DECISION_LAW_TYPE_CHOICES, max_length=255, null=True, blank=True)
+    lawsupp = models.CharField(
+        choices=maps.LAW_SUPP_CHOICES, max_length=255, null=True, blank=True)
     lawminor = models.CharField(max_length=255, null=True, blank=True)
     majopinwriter = models.CharField(max_length=255, null=True, blank=True)
     majopinassigner = models.CharField(max_length=255, null=True, blank=True)
-    splitvote = models.CharField(choices=maps.SPLIT_VOTE_CHOICES, max_length=255, null=True, blank=True)
+    splitvote = models.CharField(
+        choices=maps.SPLIT_VOTE_CHOICES, max_length=255, null=True, blank=True)
     majvotes = models.CharField(max_length=255, db_index=True)
     minvotes = models.CharField(max_length=255, db_index=True)
     weighted_majvotes = models.IntegerField(blank=True, null=True)
-
     objects = models.Manager()
     valid = utils.ValidCasesManager()
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'cases'
         ordering = ['-term', 'casename']
@@ -216,27 +221,36 @@ class Case(utils.BaseScotusModel):
         return self.casename
 
     def votes(self):
+        """
+        The typical vote score for this case, e.g., 9-0.
+        """
         if self.majvotes and self.minvotes:
             return "%s-%s" % (self.majvotes, self.minvotes)
         return None
 
-    def set_weighted_majvotes(self):
-        def weight_majvotes(obj):
-            if ((int(obj.scdb_majvotes) + int(obj.scdb_minvotes)) < 9):
-                """
-                We assume missing justices voted with the majority.
-                4 minority votes = 0 weighted votes.
-                """
-                WEIGHTED_VOTES = (9,8,7,6,0)
-                return WEIGHTED_VOTES[int(obj.scdb_minvotes)]
-            return int(obj.scdb_majvotes)
+    def get_weighted_majvotes(self):
+        """
+        A scale for weighting the majority votes on a case.
+        """
+        weighted_votes = (9,8,7,6,0)
+        if ((int(self.majvotes) + int(self.minvotes)) < 9):
+            """
+            We assume missing justices voted with the majority.
+            4 minority votes = 0 weighted votes.
+            """
+            return weighted_votes[int(self.minvotes)]
+        return int(self.majvotes)
 
-        if self.scdb_decisiondirection == "1":
-            self.nyt_weighted_majvotes = weight_majvotes(self)
-        elif self.scdb_decisiondirection == "2":
-            self.nyt_weighted_majvotes = weight_majvotes(self) * -1
-        elif self.scdb_decisiondirection == "3":
-            self.nyt_weighted_majvotes = 0
+    def set_weighted_majvotes(self):
+        """
+        Set the weighted majority votes on this model instance.
+        """
+        if self.decisiondirection == "1":
+            self.weighted_majvotes = self.get_weighted_majvotes
+        elif self.decisiondirection == "2":
+            self.weighted_majvotes = self.get_weighted_majvotes * -1
+        elif self.decisiondirection == "3":
+            self.weighted_majvotes = 0
 
 class Justice(utils.BaseScotusModel):
     """
@@ -256,16 +270,13 @@ class Justice(utils.BaseScotusModel):
     ideology_score = models.FloatField(blank=True, null=True)
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'scotus_justices'
 
-    def __str__(self):
-        return self.__unicode__()
-
     def __unicode__(self):
-        return self.get_name()
-
-    def get_name(self):
         if self.full_name and self.full_name != '-':
             return self.full_name
         return self.justicename
@@ -283,9 +294,11 @@ class Justice(utils.BaseScotusModel):
             maxvotes = maxvotes.split(',')
             positions = positions.filter(majvotes__in=maxvotes)
         votes = []
-        votes.append(set([p['caseid'] for p in positions.filter(justice=self.justice).values('caseid')]))
+        votes.append(
+            set([p['caseid'] for p in positions.filter(justice=self.justice).values('caseid')]))
         for j in justices:
-            votes.append(set([p['caseid'] for p in positions.filter(justicename=j).values('caseid')]))
+            votes.append(
+                set([p['caseid'] for p in positions.filter(justicename=j).values('caseid')]))
 
         intersecting_cases = votes[0]
         for justice_case in votes[1:]:
@@ -393,32 +406,40 @@ class Vote(utils.BaseScotusModel):
     firstagreement = models.CharField(max_length=255, blank=True, null=True)
     secondagreement = models.CharField(max_length=255, blank=True, null=True)
     weighted_majvotes = models.IntegerField(blank=True, null=True)
-
     objects = models.Manager()
     valid = utils.ValidCasesManager()
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'votes'
         ordering = ['-term', 'casename']
-
-    def __str__(self):
-        return self.__unicode__()
 
     def __unicode__(self):
         return "%s in %s" % (self.justice_obj(), self.case_obj())
 
     def justice_obj(self):
+        """
+        Go to the database, get the Justice object.
+        """
         if Justice.objects.filter(justice=self.justice).count() == 1:
             return Justice.objects.get(justice=self.justice)
         return self.justice
 
     def case_obj(self):
+        """
+        Go to the database, get the Case object.
+        """
         if Case.objects.filter(caseid=self.caseid).count() == 1:
             return Case.objects.get(caseid=self.caseid)
         return self.casename
 
     def is_majority(self):
+        """
+        Translates self.majority from string values to True/False.
+        """
         if self.majority == "1":
             return False
         if self.majority == "2":
@@ -439,6 +460,9 @@ class JusticeTerm(utils.BaseScotusModel):
     post_975 = models.FloatField(blank=True, null=True)
 
     class Meta:
+        """
+        Django Meta class.
+        """
         managed = False
         db_table = 'justice_terms'
         ordering = ('-term', 'justice')
@@ -447,14 +471,23 @@ class JusticeTerm(utils.BaseScotusModel):
         return "%s (%s)" % (self.justice_obj(), self.term)
 
     def liberal_pct(self):
+        """
+        Returns a dictionary of the percentage of liberal votes.
+        """
         return {"liberal": len(self.liberal_votes()), "total": len(self.votes()), "pct": len(self.liberal_votes()) / float(len(self.votes()))}
 
     def justice_obj(self):
+        """
+        Returns a dictionary of the percentage of liberal votes.
+        """
         if Justice.objects.filter(justice=self.justice).count() == 1:
             return Justice.objects.get(justice=self.justice)
         return None
 
     def justice_dict(self):
+        """
+        Returns a dictionary for this justice.
+        """
         payload = self.dict()
         payload['justice'] = int(self.justice)
         payload['term'] = int(self.term)
@@ -464,7 +497,13 @@ class JusticeTerm(utils.BaseScotusModel):
         return payload
 
     def liberal_votes(self):
+        """
+        Returns all liberal votes from this term.
+        """
         return Vote.valid.filter(justice=self.justice, term=self.term, direction="2")
 
     def votes(self):
+        """
+        Returns all votes from this term.
+        """
         return Vote.valid.filter(justice=self.justice, term=self.term)

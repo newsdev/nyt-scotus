@@ -1,3 +1,7 @@
+INACTIVE_JUSTICES = [
+    {"justice": 105, "justicename": "AScalia", "full_name": "Scalia, Antonin", "start_date": "09/26/1986"},
+]
+
 ACTIVE_JUSTICES = [
     {"justice": 106, "justicename": "AMKennedy", "full_name": "Kennedy, Anthony", "start_date": "02/18/1988"},
     {"justice": 108, "justicename": "CThomas", "full_name": "Thomas, Clarence", "start_date": "10/23/1991"},
